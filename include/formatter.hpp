@@ -12,6 +12,8 @@ using std::distance;
 using std::string;
 using std::vector;
 
+/* TODO: Refactor? Design is too ugly! */
+
 template <typename T>
 class Formatter : public T {
   public:
@@ -22,8 +24,8 @@ class Formatter : public T {
     template<typename it_of_it_able_indices>
     ann_t format(const it_of_it_able_indices & cnf) {
       vector<ann_t> conjuncts;
-      for(auto && c : cnf) conjuncts.push_back(this->fOr(c.begin(), c.end()));
-      return this->And(conjuncts.begin(), conjuncts.end());
+      for(auto && c : cnf) conjuncts.push_back(this->OR(c.begin(), c.end()));
+      return this->AND(conjuncts.begin(), conjuncts.end());
     }
 
 };
@@ -34,47 +36,50 @@ class FormatterBase {
     using result_type = ann_t;
 
     virtual ~FormatterBase() {}
-    FormatterBase(const vector<ann_t> & fs, const int o) : f(fs), k(o) {}
 
-    virtual ann_t feature(const int & i) {
-      return (i > 0 ? f[i-k] : this->Not(f[-i-k]));
-    }
+    virtual ann_t constant(const int &) = 0;
+    virtual ann_t constant(const string &) = 0;
+    virtual ann_t variable(const string &) = 0;
 
-    virtual ann_t And(const ann_t &, const ann_t &) = 0;
-    virtual ann_t Not(const ann_t &) = 0;
-    virtual ann_t Or(const ann_t &, const ann_t &) = 0;
+    virtual ann_t LT(const ann_t &, const ann_t &) = 0;
+    virtual ann_t GT(const ann_t &, const ann_t &) = 0;
+    virtual ann_t EQ(const ann_t &, const ann_t &) = 0;
+    virtual ann_t NE(const ann_t &, const ann_t &) = 0;
 
-    virtual ann_t fAnd(const int &, const int &) = 0;
-    virtual ann_t fNot(const int &) = 0;
-    virtual ann_t fOr(const int &, const int &) = 0;
+    virtual ann_t AND(const ann_t &, const ann_t &) = 0;
+    virtual ann_t NOT(const ann_t &) = 0;
+    virtual ann_t OR(const ann_t &, const ann_t &) = 0;
 
-    template<class iter> ann_t And(iter, iter);
-    template<class iter> ann_t Or(iter, iter);
-
-    template<class iter> ann_t fAnd(iter, iter);
-    template<class iter> ann_t fOr(iter, iter);
-
-  protected:
-    const int k;
-    const vector<ann_t> & f;
+    template<class iter> ann_t AND(iter, iter);
+    template<class iter> ann_t OR(iter, iter);
 };
 
 namespace {
 
 class Human : public FormatterBase<string> {
+  private:
+    string OP(const string & a, const string & op, const string & b) {
+      return "(" + a + " " + op + " " + b + ")";
+    }
+
   public:
     using FormatterBase<string>::FormatterBase;
 
-    string And(const string & a, const string & b) {
-      return "(" + a + " AND " + b + ")";
-    }
+    string constant(const int & a) { return std::to_string(a);  }
+    string constant(const string & a) { return a;  }
+    string variable(const string & a) { return a;  }
 
-    string fAnd(const int & a, const unsigned & b) {
-      return "(" + this->feature(a) + " AND " + this->feature(b) + ")";
-    }
+    string LT(const string & a, const string & b) { return OP(a, "<", b); }
+    string GT(const string & a, const string & b) { return OP(a, ">", b); }
+    string EQ(const string & a, const string & b) { return OP(a, "==", b); }
+    string NE(const string & a, const string & b) { return OP(a, "!=", b); }
+
+    string AND(const string & a, const string & b) { return OP(a, "&&", b); }
+    string NOT(const string & a) { return "~(" + a + ")"; }
+    string OR(const string & a, const string & b) { return OP(a, "||", b); }
 
     template<class iter>
-    string And(iter a, iter b) {
+    string AND(iter a, iter b) {
       if(distance(a, b) == 0) return "";
       if(distance(a, b) < 2) return *a;
       auto res = "(" + *a;
@@ -84,33 +89,7 @@ class Human : public FormatterBase<string> {
     }
 
     template<class iter>
-    string fAnd(iter a, iter b) {
-      if(distance(a, b) == 0) return "";
-      if(distance(a, b) < 2) return this->feature(*a);
-      auto res = "(" + this->feature(*a);
-      for(++a; a != b; ++a) res += " AND " + this->feature(*a);
-      res += ")";
-      return res;
-    }
-
-    string Not(const string & a) {
-      return "NOT(" + a + ")";
-    }
-
-    string fNot(const int & a) {
-      return "NOT(" + this->feature(a) + ")";
-    }
-
-    string Or(const string & a, const string & b) {
-      return "(" + a + " OR " + b + ")";
-    }
-
-    string fOr(const int & a, const int & b) {
-      return "(" + this->feature(a) + " OR " + this->feature(b) + ")";
-    }
-
-    template<class iter>
-    string Or(iter a, iter b) {
+    string OR(iter a, iter b) {
       if(distance(a, b) == 0) return "";
       if(distance(a, b) < 2) return *a;
       auto res = "(" + *a;
@@ -119,32 +98,33 @@ class Human : public FormatterBase<string> {
       return res;
     }
 
-    template<class iter>
-    string fOr(iter a, iter b) {
-      if(distance(a, b) == 0) return "";
-      if(distance(a, b) < 2) return this->feature(*a);
-      auto res = "(" + this->feature(*a);
-      for(++a; a != b; ++a) res += " OR " + this->feature(*a);
-      res += ")";
-      return res;
-    }
-
 };
 
 class SMTLIB2 : public FormatterBase<string> {
+  private:
+    string OP(const string & op, const string & a, const string & b) {
+      return "(" + op + " " + a + " " + b + ")";
+    }
+
   public:
     using FormatterBase<string>::FormatterBase;
 
-    string And(const string & a, const string & b) {
-      return "(and " + a + " " + b + ")";
-    }
+    /* TODO: declare variables too, to generate valid SMTLIB2 file */
+    string constant(const int & a) { return std::to_string(a);  }
+    string constant(const string & a) { return a;  }
+    string variable(const string & a) { return a;  }
 
-    string fAnd(const int & a, const int & b) {
-      return "(and " + this->feature(a) + " " + this->feature(b) + ")";
-    }
+    string LT(const string & a, const string & b) { return OP("<", a, b); }
+    string GT(const string & a, const string & b) { return OP(">", a, b); }
+    string EQ(const string & a, const string & b) { return OP("=", a, b); }
+    string NE(const string & a, const string & b) { return NOT(EQ(a, b)); }
+
+    string AND(const string & a, const string & b) { return OP("and", a, b); }
+    string NOT(const string & a) { return "(not " + a + ")"; }
+    string OR(const string & a, const string & b) { return OP("or", a, b); }
 
     template<class iter>
-    string And(iter a, iter b) {
+    string AND(iter a, iter b) {
       if(distance(a, b) == 0) return "";
       if(distance(a, b) < 2) return *a;
       string res = "(and";
@@ -154,47 +134,11 @@ class SMTLIB2 : public FormatterBase<string> {
     }
 
     template<class iter>
-    string fAnd(iter a, iter b) {
-      if(distance(a, b) == 0) return "";
-      if(distance(a, b) < 2) return this->feature(*a);
-      string res = "(and";
-      for(; a != b; ++a) res += " " + this->feature(*a);
-      res += ")";
-      return res;
-    }
-
-    string Not(const string & a) {
-      return "(not " + a + ")";
-    }
-
-    string fNot(const int & a) {
-      return "(not " + this->feature(a) + ")";
-    }
-
-    string Or(const string & a, const string & b) {
-      return "(or " + a + " " + b + ")";
-    }
-
-    string fOr(const int & a, const int & b) {
-      return "(or " + this->feature(a) + " " + this->feature(b) + ")";
-    }
-
-    template<class iter>
-    string Or(iter a, iter b) {
+    string OR(iter a, iter b) {
       if(distance(a, b) == 0) return "";
       if(distance(a, b) < 2) return *a;
       string res = "(or";
       for(; a != b; ++a) res += " " + *a;
-      res += ")";
-      return res;
-    }
-
-    template<class iter>
-    string fOr(iter a, iter b) {
-      if(distance(a, b) == 0) return "";
-      if(distance(a, b) < 2) return this->feature(*a);
-      string res = "(or";
-      for(; a != b; ++a) res += " " + this->feature(*a);
       res += ")";
       return res;
     }

@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 
+#include "features.hpp"
 #include "formatter.hpp"
 #include "learner.hpp"
 #include "pie.hpp"
@@ -23,9 +24,7 @@ int main() {
     {1, -1, 0, -2, 2},
     [](int i) -> int { return i > 0 ? i : -i; },
     {[](int i, exc_or_res<int> r) { return r.is(i); }, "equal output"},
-    {{[](int i) { return i < 0; }, "(< i 0)"},
-     {[](int i) { return i > 0; }, "(> i 0)"},
-     {[](int i) { return i == 0; }, "(= i 0)"}}
+    gen::features<int>({"i"})[Formatter()]
   );
 
   std::cout << pie.infer() << std::endl;

@@ -4,6 +4,7 @@
 
 #include <exception>
 #include <functional>
+#include <list>
 #include <memory>
 #include <numeric>
 #include <unordered_map>
@@ -18,6 +19,7 @@ namespace pie {
 
 using std::accumulate;
 using std::function;
+using std::list;
 using std::pair;
 using std::unique_ptr;
 using std::unordered_map;
@@ -66,9 +68,21 @@ class PIE {
 
     ann_t infer() const {
       auto && res = learner->learn();
-      vector<ann_t> features_ann;
-      for(auto && f : features) features_ann.push_back(f.second);
-      return Formatter(features_ann, learner->f_offset).format(res.second);
+      Formatter formatter;
+
+      list<list<ann_t>> features_ann;
+      for(auto && c : res.second) {
+        list<ann_t> nc;
+        for(auto && f : c) {
+          if(f > 0)
+            nc.push_back(features[f - learner->f_offset].second);
+          else
+            nc.push_back(formatter.NOT(features[-f - learner->f_offset].second));
+        }
+        features_ann.push_back(nc);
+      }
+
+      return formatter.format(features_ann);
     }
 
     PIE & add_test(const arg_t & t) {
