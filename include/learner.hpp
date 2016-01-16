@@ -3,6 +3,7 @@
 #define __LEARNER_HPP__ 1
 
 #include <exception>
+#include <list>
 #include <map>
 #include <unordered_map>
 #include <unordered_set>
@@ -17,6 +18,7 @@
 
 namespace bfl {
 
+using std::list;
 using std::pair;
 using std::unordered_map;
 using std::unordered_set;
@@ -38,11 +40,11 @@ class BFLBase {
 
     virtual ~BFLBase() {};
     BFLBase(test_id_t ntest, feature_id_t nfeature) : feature_count(nfeature) {
-      // test_vectors.reserve(ntest);
+      // test_set.reserve(ntest);
     }
 
     virtual const vector<bool> & operator[] (test_id_t & test_id) const {
-      const auto & tv_id_view = boost::multi_index::get<by_id>(test_vectors);
+      const auto & tv_id_view = boost::multi_index::get<by_id>(test_set);
       const auto & t_it = tv_id_view.find(test_id);
 
       if(t_it == tv_id_view.end())
@@ -50,25 +52,49 @@ class BFLBase {
       else return t_it -> features;
     }
 
-    virtual test_info && operator() (test_id_t & test_id) const {
-      const auto & tv_id_view = boost::multi_index::get<by_id>(test_vectors);
+    virtual test_info operator() (test_id_t & test_id) const {
+      const auto & tv_id_view = boost::multi_index::get<by_id>(test_set);
       const auto & t_it = tv_id_view.find(test_id);
 
       if(t_it == tv_id_view.end())
             throw std::runtime_error("Invalid test_id!");
-      else  { auto t = *t_it; return std::move(t); }
+      else  return *t_it;
     }
 
     virtual learner_t & operator+= (test_info && new_test) {
-      if(new_test.id == 0)   new_test.id = test_vectors.size();
-      test_vectors.insert(new_test);
+      if(new_test.id == 0)   new_test.id = test_set.size();
+      test_set.insert(new_test);
       return static_cast<learner_t &>(*this);
     }
 
     /* TODO: Implement conflict detection */
-    virtual vector<unordered_set<test_id_t>> conflicted_tests() const {
-      const auto & fv_view = boost::multi_index::get<by_fvector>(test_vectors);
-      return {};
+    virtual list<unordered_set<test_id_t>> conflicted_tests() const {
+      list<unordered_set<test_id_t>> conflicted_groups;
+
+      const auto & fv_view = boost::multi_index::get<by_fvector>(test_set);
+      for(auto fv_it = fv_view.begin(); fv_it != fv_view.end(); ) {
+        const auto & fv = fv_it->features;
+        auto bounds = fv_view.equal_range(fv);
+        bool res = fv_it->result, conflict = false;
+
+        for(fv_it = bounds.first; fv_it != bounds.second; ++fv_it) {
+          if(fv_it->result != res) {
+            conflict = true;
+            break;
+          }
+        }
+        fv_it = bounds.second;
+
+        if(conflict) {
+          unordered_set<test_id_t> group;
+          auto bounds = fv_view.equal_range(fv);
+          for(auto & it = bounds.first; it != bounds.second; ++it)
+            group.insert(it->id);
+          conflicted_groups.push_back(group);
+        }
+      }
+
+      return conflicted_groups;
     }
 
     virtual pair<learner_result_t, bool_func_t> learn() const = 0;
@@ -78,7 +104,6 @@ class BFLBase {
   protected:
     /* Tags for accessing test_info_container indices */
     struct by_fvector   {};
-    struct by_result    {};
     struct by_id        {};
 
     typedef boost::multi_index::multi_index_container <
@@ -89,17 +114,13 @@ class BFLBase {
           member<test_info, test_id_t, &test_info::id>
         >,
         boost::multi_index::hashed_non_unique <
-          boost::multi_index::tag<by_result>,
-          member<test_info, bool, &test_info::result>
-        >,
-        boost::multi_index::hashed_non_unique <
           boost::multi_index::tag<by_fvector>,
           member<test_info, vector<bool>, &test_info::features>
         >
       >
     > test_info_container;
 
-    test_info_container test_vectors;
+    test_info_container test_set;
 
     const feature_id_t feature_count;
 };
@@ -116,10 +137,54 @@ class PACLearner
 : public BFLBase <PACLearner<feature_id_t, test_id_t, clause_id_t>,
                   bool_func_t, feature_id_t, test_id_t> {
 
-  using BFLBase <PACLearner<feature_id_t, test_id_t, clause_id_t>,
-                 bool_func_t, feature_id_t, test_id_t>::BFLBase;
-
   public:
+    using BFLBase <PACLearner<feature_id_t, test_id_t, clause_id_t>,
+                   bool_func_t, feature_id_t, test_id_t>::BFLBase;
+
+    constexpr static int f_offset = 1;
+
+    pair<learner_result_t, bool_func_t>
+    learn() const {
+      if(this->conflicted_tests().size())
+        return {BAD_FUNCTION, {}};
+
+      for(auto max_clause_size = 3; max_clause_size < types::CLAUSE_SIZE_LIMIT;
+          ++max_clause_size) {
+        auto clauses = generate_clauses(max_clause_size, this->feature_count);
+
+        unordered_set<vector<bool>> pos_vectors, neg_vectors;
+        for(auto && t : this->test_set) {
+          vector<bool> vec;
+          for(auto && clause : clauses) {
+            bool sat = false;
+            for(auto && f_id : clause) {
+              if((f_id > 0 && t.features[f_id-1]) ||
+                 (f_id < 0 && !(t.features[-f_id-1]))) {
+                   sat = true;
+                   break;
+              }
+            }
+            vec.push_back(sat);
+          }
+
+          (t.result ? pos_vectors : neg_vectors).insert(vec);
+        }
+
+        try {
+          bool_func_t result;
+          for(auto & clause
+              : learn_conjunction(clauses, pos_vectors, neg_vectors))
+            result.push_back(clauses[clause]);
+          return {PASS, result};
+        } catch (const bad_function_error & e) {
+           return {BAD_FUNCTION, {}};
+        }
+      }
+
+      return {FAIL, {}};
+    }
+
+  protected:
     /* TODO: Optimize? */
     static bool_func_t
     generate_clauses(unsigned max_clause_size,
@@ -248,49 +313,6 @@ class PACLearner
         : prune_with_neg(prune_with_pos(std::move(conj), clauses, pos),
                          clauses, neg));
     }
-
-    pair<learner_result_t, bool_func_t>
-    learn() const {
-      if(this->conflicted_tests().size())
-        return {BAD_FUNCTION, {}};
-
-      for(auto max_clause_size = 3; max_clause_size < types::CLAUSE_SIZE_LIMIT;
-          ++max_clause_size) {
-        auto clauses = generate_clauses(max_clause_size, this->feature_count);
-
-        unordered_set<vector<bool>> pos_vectors, neg_vectors;
-        for(auto && t : this->test_vectors) {
-          vector<bool> vec;
-          for(auto && clause : clauses) {
-            bool sat = false;
-            for(auto && f_id : clause) {
-              if((f_id > 0 && t.features[f_id-1]) ||
-                 (f_id < 0 && !(t.features[-f_id-1]))) {
-                   sat = true;
-                   break;
-              }
-            }
-            vec.push_back(sat);
-          }
-
-          (t.result ? pos_vectors : neg_vectors).insert(vec);
-        }
-
-        try {
-          bool_func_t result;
-          for(auto & clause
-              : learn_conjunction(clauses, pos_vectors, neg_vectors))
-            result.push_back(clauses[clause]);
-          return {PASS, result};
-        } catch (const bad_function_error & e) {
-           return {BAD_FUNCTION, {}};
-        }
-      }
-
-      return {FAIL, {}};
-    }
-
-    constexpr static int f_offset = 1;
 
 };
 

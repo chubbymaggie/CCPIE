@@ -3,39 +3,24 @@
 #define __FORMATTER_HPP__ 1
 
 #include <iterator>
+#include <list>
 #include <string>
-#include <vector>
+
+//#include "operators.hpp"
+#include "types.hpp"
 
 namespace fmt {
 
 using std::distance;
 using std::string;
-using std::vector;
+using std::list;
 
-/* TODO: Refactor? Design is too ugly! */
-
-template <typename T>
-class Formatter : public T {
-  public:
-    using ann_t = typename T::result_type;
-
-    using T::T;
-
-    template<typename it_of_it_able_indices>
-    ann_t format(const it_of_it_able_indices & cnf) {
-      vector<ann_t> conjuncts;
-      for(auto && c : cnf) conjuncts.push_back(this->OR(c.begin(), c.end()));
-      return this->AND(conjuncts.begin(), conjuncts.end());
-    }
-
-};
+namespace {
 
 template <typename ann_t>
 class FormatterBase {
   public:
     using result_type = ann_t;
-
-    virtual ~FormatterBase() {}
 
     virtual ann_t constant(const int &) = 0;
     virtual ann_t constant(const string &) = 0;
@@ -54,14 +39,7 @@ class FormatterBase {
     template<class iter> ann_t OR(iter, iter);
 };
 
-namespace {
-
 class Human : public FormatterBase<string> {
-  private:
-    string OP(const string & a, const string & op, const string & b) {
-      return "(" + a + " " + op + " " + b + ")";
-    }
-
   public:
     using FormatterBase<string>::FormatterBase;
 
@@ -98,14 +76,13 @@ class Human : public FormatterBase<string> {
       return res;
     }
 
+  private:
+    string OP(const string & a, const string & op, const string & b) {
+      return "(" + a + " " + op + " " + b + ")";
+    }
 };
 
 class SMTLIB2 : public FormatterBase<string> {
-  private:
-    string OP(const string & op, const string & a, const string & b) {
-      return "(" + op + " " + a + " " + b + ")";
-    }
-
   public:
     using FormatterBase<string>::FormatterBase;
 
@@ -143,9 +120,32 @@ class SMTLIB2 : public FormatterBase<string> {
       return res;
     }
 
+  private:
+    string OP(const string & op, const string & a, const string & b) {
+      return "(" + op + " " + a + " " + b + ")";
+    }
 };
 
 }
+
+template <typename T>
+class Formatter : public T {
+  static_assert(types::is_base_of_template<T, FormatterBase>::value,
+                "Unrecognized Formatter type!");
+
+  public:
+    using ann_t = typename T::result_type;
+
+    using T::T;
+
+    template<typename it_of_it_able_indices>
+    ann_t format(const it_of_it_able_indices & cnf) {
+      list<ann_t> conjuncts;
+      for(auto && c : cnf) conjuncts.push_back(this->OR(c.begin(), c.end()));
+      return this->AND(conjuncts.begin(), conjuncts.end());
+    }
+
+};
 
 using HumanFormatter = Formatter<Human>;
 using SMTLIB2Formatter = Formatter<SMTLIB2>;

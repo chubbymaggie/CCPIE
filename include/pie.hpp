@@ -68,6 +68,12 @@ class PIE {
 
     ann_t infer() const {
       auto && res = learner->learn();
+      if(res.first == bfl::FAIL)
+        throw std::runtime_error("FAILED");
+      else if(res.first == bfl::BAD_FUNCTION) {
+        throw std::runtime_error("BAD FUNCTION");
+      }
+
       Formatter formatter;
 
       list<list<ann_t>> features_ann;

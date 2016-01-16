@@ -21,14 +21,14 @@ namespace {
 
 template <typename T>
 class FeaturesBase {
-  protected:
-    vector<string> args;
-
   public:
     FeaturesBase(vector<string> names) : args(names) {}
 
     template <typename Formatter, typename features_t>
-    features_t operator[] (Formatter formatter);
+    features_t operator[] (Formatter formatter) const;
+
+  protected:
+    vector<string> args;
 };
 
 }
@@ -40,7 +40,7 @@ class features : public FeaturesBase<Integer> {
 
     template <typename Formatter, typename features_t = vector<
                pair<function<bool(Integer)>, typename Formatter::result_type>>>
-    features_t operator[] (Formatter formatter) {
+    features_t operator[] (Formatter formatter) const {
       auto a = formatter.variable(this->args[0]);
       auto b = formatter.constant(0);
 

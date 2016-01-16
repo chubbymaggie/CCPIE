@@ -1,13 +1,10 @@
 #include <iostream>
-#include <string>
 
 #include "features.hpp"
 #include "formatter.hpp"
 #include "learner.hpp"
 #include "pie.hpp"
 #include "types.hpp"
-
-using std::string;
 
 using pie::exc_or_res;
 using pie::PIE;
