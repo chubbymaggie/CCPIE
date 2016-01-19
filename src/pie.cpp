@@ -1,30 +1,26 @@
 #include <iostream>
+#include <unordered_set>
+#include <vector>
 
-#include "features.hpp"
-#include "formatter.hpp"
-#include "learner.hpp"
-#include "pie.hpp"
-#include "types.hpp"
+#include <boost/optional.hpp>
 
-using pie::exc_or_res;
-using pie::PIE;
-
-using types::clause_id_t;
-using types::feature_id_t;
-using types::test_id_t;
+#include "pie.h"
 
 int main() {
-  using Formatter = fmt::SMTLIB2Formatter;
-  using Learner = bfl::PACLearner<feature_id_t, test_id_t, clause_id_t>;
+  using Formatter = pie::formats::Human<std::list>;
+  using Learner = pie::bfl::SimpleLearner<>;
 
-  PIE<int, int, Formatter, Learner> pie(
-    {1, -1, 0, -2, 2},
-    [](int i) -> int { return i > 0 ? i : -i; },
-    {[](int i, exc_or_res<int> r) { return r.is(i); }, "equal output"},
-    gen::features<int>({"i"})[Formatter()]
-  );
+  pie::PIEngine<int, bool, Formatter::FormatT> pie(
 
-  std::cout << pie.infer() << std::endl;
+      pie::gen::Features<int>({"i"})[Formatter()],
+
+      [](int i) -> bool { return i % 2 == 0; },
+
+      {[](int i, boost::optional<bool> r) { return r && !(*r); }, "not even"},
+
+      {1, 0, -2});
+
+  std::cout << pie.inferCNF<Learner>(Formatter()) << std::endl;
 
   return 0;
 }
