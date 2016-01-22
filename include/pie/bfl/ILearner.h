@@ -26,7 +26,7 @@ namespace tag {
 struct by_fvector {};
 struct by_id {};
 
-} // namespace tags
+} // namespace tag
 
 enum LearnerStatus { PASS, FAIL, BAD_FUNCTION };
 

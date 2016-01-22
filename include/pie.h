@@ -11,4 +11,6 @@
 
 #include "pie/PIEngine.h"
 
+#include "pie/Log.h"
+
 #endif

@@ -11,13 +11,21 @@
 
 #include "pie/detail/PIEngine.h"
 
+#include "pie/Log.h"
+
 namespace pie {
+
+/* TODO: Assuming that ArgT, ResT and FormatT are printable for debugging */
+
+/* TODO: Cache learner state instead of constructing a new instance for every
+ * call to inferCNF */
 
 template <typename ArgT, typename ResT, class FormatT>
 template <typename Learner, typename Formatter>
-FormatT PIEngine<ArgT, ResT, FormatT>::inferCNF(Formatter && formatter) const {
+FormatT PIEngine<ArgT, ResT, FormatT>::inferCNF() const {
   Learner learner(features.size());
 
+  INFO << "Invoking boolean function learner ...";
   for (auto && t : tests) {
     learner += {std::accumulate(features.begin(),
                                 features.end(),
@@ -34,10 +42,10 @@ FormatT PIEngine<ArgT, ResT, FormatT>::inferCNF(Formatter && formatter) const {
 
   if (result.first == pie::bfl::FAIL)
     throw std::runtime_error("FAILED");
-  else if (result.first == pie::bfl::BAD_FUNCTION) {
+  else if (result.first == pie::bfl::BAD_FUNCTION)
     throw std::runtime_error("BAD FUNCTION");
-  }
 
+  Formatter formatter;
   typename Formatter::FormatCNF format_cnf;
   for (auto && c : result.second) {
     typename Formatter::FormatCNF::value_type nc;
@@ -50,12 +58,16 @@ FormatT PIEngine<ArgT, ResT, FormatT>::inferCNF(Formatter && formatter) const {
     }
     format_cnf.push_back(nc);
   }
-  return formatter.format(format_cnf);
+
+  auto final_cnf = formatter.format(format_cnf);
+  INFO << "Result = " << final_cnf;
+  return final_cnf;
 }
 
 template <typename ArgT, typename ResT, class FormatT>
 PIEngine<ArgT, ResT, FormatT> &
 PIEngine<ArgT, ResT, FormatT>::add_test(ArgT && t) {
+  INFO << "Added new test: " << t;
   tests.push_back(t);
   return *this;
 }
@@ -63,12 +75,20 @@ PIEngine<ArgT, ResT, FormatT>::add_test(ArgT && t) {
 template <typename ArgT, typename ResT, class FormatT>
 PIEngine<ArgT, ResT, FormatT> & PIEngine<ArgT, ResT, FormatT>::add_feature(
     std::pair<std::function<bool(ArgT)>, FormatT> && f) {
-  features.push_back( {[f = std::move(f.first)](ArgT a) { return detail::callExceptionSafe(f, a);
-}
-, std::move(f.second)
-});
+  INFO << "Added new feature: " << f.second;
 
-return *this;
+  /* clang-format off */
+
+  /* TODO: No C++14 support in clang-format yet (3.6). Does a horrible job at
+   * the snippet below (as it uses generic lambda-capture initializers). */
+
+  features.push_back({
+    [f = std::move(f.first)](ArgT a) { return detail::callExceptionSafe(f, a);},
+    std::move(f.second)});
+
+
+  return *this;
+/* clang-format on */
 }
 
 template <typename ArgT, typename ResT, class FormatT>
@@ -80,15 +100,37 @@ PIEngine<ArgT, ResT, FormatT>::PIEngine(
     : func(f), post(p), tests(ts), orig_tests(ts.size()),
       orig_features(fs.size()) {
 
-  /* Save exception-safe versions of the features. */
-  for (auto fi : fs) {
-    features.push_back(
-        {[fi = std::move(fi.first)](ArgT a)->boost::optional<bool> {
-          return detail::callExceptionSafe(fi, a);
+  INFO << "New PIE [ " << typeid(ArgT).name() << " -> " << typeid(ResT).name()
+       << " ] instance created { " << orig_tests << " T x " << orig_features
+       << " F }";
+
+  DEBUG << indent(2) << "Post:";
+  DEBUG << indent(4) << p.second;
+
+  DEBUG << indent(2) << "Tests:";
+  for (auto && t : tests) DEBUG << indent(4) << ". " << t;
+
+  DEBUG << indent(2) << "Features:";
+  {
+    auto i = 0;
+    for (auto f = fs.cbegin(); f != fs.cend(); ++f, ++i)
+      DEBUG << indent(4) << i << ". " << f->second;
   }
-  , std::move(fi.second)
-});
-}
+
+  /* clang-format off */
+
+  /* TODO: No C++14 support in clang-format yet (3.6). Does a horrible job at
+   * the snippet below (as it uses generic lambda-capture initializers).
+   *
+   * Save exception-safe versions of the features.
+   */
+  for (auto fi : fs) {
+    features.push_back({
+      [fi = std::move(fi.first)](ArgT a)->boost::optional<bool> {
+          return detail::callExceptionSafe(fi, a); },
+      std::move(fi.second)});
+  }
+/* clang-format on */
 }
 
 } // namespace pie

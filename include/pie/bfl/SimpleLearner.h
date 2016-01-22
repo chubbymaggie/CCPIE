@@ -7,15 +7,12 @@
 
 #include "pie/config.h"
 
+#include "pie/Log.h"
+
 #include "pie/bfl/ILearner.h"
 
 namespace pie {
 namespace bfl {
-
-class bad_function_error : public std::logic_error {
-public:
-  bad_function_error() : logic_error("Impossible boolean function!") {}
-};
 
 template <template <typename...> typename SeqContainer = std::vector,
           template <typename...> typename UniqueContainer = std::unordered_set>
@@ -26,12 +23,26 @@ public:
   using __base =
       ILearner<SimpleLearner<SeqContainer, UniqueContainer>, SeqContainer>;
   using LearnerResult = typename __base::LearnerResult;
-  using CNF = typename __base::CNF;
 
+  using CNF = typename __base::CNF;
   using RndAccessCNF = std::vector<std::vector<FeatureID>>;
+
+  class bad_function_error : public std::logic_error {
+  public:
+    bad_function_error() : logic_error("Impossible boolean function!") {}
+  };
 
   using ILearner<SimpleLearner<SeqContainer, UniqueContainer>,
                  SeqContainer>::ILearner;
+
+  SimpleLearner(FeatureID nfeature)
+      : ILearner<SimpleLearner<SeqContainer, UniqueContainer>, SeqContainer>(
+            nfeature) {
+    INFO << "SimpleLearner instantiated with "
+         << static_cast<int_fast64_t>(nfeature) << " F";
+    DEBUG << indent(2) << "Offset for feature-ids = "
+          << static_cast<int_fast64_t>(featureIndexOffset());
+  }
 
   LearnerResult learnCNF() const;
 
@@ -43,19 +54,22 @@ public:
 
   static UniqueContainer<ClauseID>
   pruneClausesWithPositives(UniqueContainer<ClauseID> && conj,
+                            RndAccessCNF & clauses,
                             const UniqueContainer<BitVector> & pos);
 
   static UniqueContainer<ClauseID>
   pruneClausesWithNegatives(UniqueContainer<ClauseID> && conj,
+                            RndAccessCNF & clauses,
                             UniqueContainer<BitVector> & neg);
 
   static UniqueContainer<ClauseID>
   learnStrongConjunctionOnAllClauses(UniqueContainer<ClauseID> && conj,
+                                     RndAccessCNF & clauses,
                                      const UniqueContainer<BitVector> & pos,
                                      UniqueContainer<BitVector> & neg);
 
   static UniqueContainer<ClauseID>
-  learnConjunctionOnAllClauses(ClauseID clauses_count,
+  learnConjunctionOnAllClauses(RndAccessCNF & clauses,
                                UniqueContainer<BitVector> & pos,
                                UniqueContainer<BitVector> & neg,
                                bool strengthen = false);

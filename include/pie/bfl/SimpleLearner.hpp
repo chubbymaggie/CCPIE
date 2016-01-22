@@ -6,6 +6,8 @@
 
 #include "pie/config.h"
 
+#include "pie/Log.h"
+
 namespace pie {
 namespace bfl {
 
@@ -41,12 +43,16 @@ SimpleLearner<SeqContainer, UniqueContainer>::learnCNF() const {
       CNF result;
       using ClauseT = typename CNF::value_type;
 
-      for (auto & clause : learnConjunctionOnAllClauses(
-               clauses.size(), pos_vectors, neg_vectors)) {
+      DEBUG << "Learning conjunction on clauses:";
+      auto learned_cnf =
+          learnConjunctionOnAllClauses(clauses, pos_vectors, neg_vectors);
+
+      for (auto & clause : learned_cnf) {
         // TODO: Conditionally avoid copy if SeqContainer is std::vector
         result.push_back(
             ClauseT(clauses[clause].cbegin(), clauses[clause].cend()));
       }
+      DEBUG << "Learned CNF = " << static_cast<const CNF &>(result);
 
       return {PASS, result};
     } catch (const bad_function_error & e) {
@@ -92,6 +98,16 @@ SimpleLearner<SeqContainer, UniqueContainer>::genAllClauses(
     } while (std::prev_permutation(select.begin(), select.end()));
   }
 
+  DEBUG << "Generated " << clauses.size()
+        << " clauses for K <= " << static_cast<int_fast64_t>(max_clause_size)
+        << " over " << (negated_vars ? "2*" : "")
+        << static_cast<int_fast64_t>(max_feature_id) << " Vars";
+  {
+    auto i = 0;
+    for (auto c = clauses.cbegin(); c != clauses.end(); ++c, ++i)
+      DEBUG << indent(2) << i << ". " << (*c);
+  }
+
   return clauses;
 }
 
@@ -99,13 +115,19 @@ template <template <typename...> typename SeqContainer,
           template <typename...> typename UniqueContainer>
 UniqueContainer<ClauseID>
 SimpleLearner<SeqContainer, UniqueContainer>::pruneClausesWithPositives(
-    UniqueContainer<ClauseID> && conj, const UniqueContainer<BitVector> & pos) {
+    UniqueContainer<ClauseID> && conj,
+    typename SimpleLearner<SeqContainer, UniqueContainer>::RndAccessCNF &
+        clauses,
+    const UniqueContainer<BitVector> & pos) {
   for (auto && p : pos)
     for (auto ci = conj.begin(); ci != conj.end();)
       if (!p[*ci])
         ci = conj.erase(ci);
       else
         ++ci;
+
+  DEBUG << indent(2)
+        << "C_pos = " << static_cast<const UniqueContainer<ClauseID> &>(conj);
 
   return conj;
 }
@@ -114,17 +136,22 @@ template <template <typename...> typename SeqContainer,
           template <typename...> typename UniqueContainer>
 UniqueContainer<ClauseID>
 SimpleLearner<SeqContainer, UniqueContainer>::pruneClausesWithNegatives(
-    UniqueContainer<ClauseID> && conj, UniqueContainer<BitVector> & neg) {
+    UniqueContainer<ClauseID> && conj,
+    typename SimpleLearner<SeqContainer, UniqueContainer>::RndAccessCNF &
+        clauses,
+    UniqueContainer<BitVector> & neg) {
   UniqueContainer<ClauseID> result;
 
   while (!neg.empty()) {
-    std::pair<ClauseID, TestID> max_false({0, 0});
+    std::pair<ClauseID, TestID> max_false{0, 0};
     for (auto & c : conj) {
       TestID f = 0;
       for (auto & n : neg) {
         if (!n[c]) ++f;
       }
-      if (f > max_false.second) max_false = {c, f};
+      if (f > max_false.second ||
+          (f == max_false.second && c < max_false.first))
+        max_false = {c, f};
     }
 
     if (max_false.second == 0) throw bad_function_error();
@@ -139,25 +166,33 @@ SimpleLearner<SeqContainer, UniqueContainer>::pruneClausesWithNegatives(
         ++ni;
   }
 
+  DEBUG << indent(2)
+        << "C_neg = " << static_cast<const UniqueContainer<ClauseID> &>(result);
+
   return result;
 }
 
 template <template <typename...> typename SeqContainer,
           template <typename...> typename UniqueContainer>
 UniqueContainer<ClauseID> SimpleLearner<SeqContainer, UniqueContainer>::
-    learnStrongConjunctionOnAllClauses(UniqueContainer<ClauseID> && conj,
-                                       const UniqueContainer<BitVector> & pos,
-                                       UniqueContainer<BitVector> & neg) {
+    learnStrongConjunctionOnAllClauses(
+        UniqueContainer<ClauseID> && conj,
+        typename SimpleLearner<SeqContainer, UniqueContainer>::RndAccessCNF &
+            clauses,
+        const UniqueContainer<BitVector> & pos,
+        UniqueContainer<BitVector> & neg) {
   UniqueContainer<ClauseID> result;
 
   while (!neg.empty()) {
-    std::pair<ClauseID, TestID> max_false({0, 0});
+    std::pair<ClauseID, TestID> max_false{0, 0};
     for (auto && c : conj) {
       TestID f = 0;
       for (auto && n : neg) {
         if (!n[c]) ++f;
       }
-      if (f > max_false.second) max_false = {c, f};
+      if (f > max_false.second ||
+          (f == max_false.second && c < max_false.first))
+        max_false = {c, f};
     }
 
     if (max_false.second == 0) throw bad_function_error();
@@ -186,6 +221,9 @@ UniqueContainer<ClauseID> SimpleLearner<SeqContainer, UniqueContainer>::
         ++ni;
   }
 
+  DEBUG << indent(2) << "C_strong = "
+        << static_cast<const UniqueContainer<ClauseID> &>(result);
+
   return result;
 }
 
@@ -193,17 +231,24 @@ template <template <typename...> typename SeqContainer,
           template <typename...> typename UniqueContainer>
 UniqueContainer<ClauseID>
 SimpleLearner<SeqContainer, UniqueContainer>::learnConjunctionOnAllClauses(
-    ClauseID clauses_count,
+    typename SimpleLearner<SeqContainer, UniqueContainer>::RndAccessCNF &
+        clauses,
     UniqueContainer<BitVector> & pos,
     UniqueContainer<BitVector> & neg,
     bool strengthen) {
-  UniqueContainer<ClauseID> conj(clauses_count);
-  for (ClauseID i = 0; i < clauses_count; ++i) conj.insert(i);
+  UniqueContainer<ClauseID> conj(clauses.size());
+  for (ClauseID i = 0; i < clauses.size(); ++i) conj.insert(i);
+
+  DEBUG << indent(2)
+        << "C_all = " << static_cast<const UniqueContainer<ClauseID> &>(conj);
 
   return (strengthen
-              ? learnStrongConjunctionOnAllClauses(std::move(conj), pos, neg)
+              ? learnStrongConjunctionOnAllClauses(
+                    std::move(conj), clauses, pos, neg)
               : pruneClausesWithNegatives(
-                    pruneClausesWithPositives(std::move(conj), pos), neg));
+                    pruneClausesWithPositives(std::move(conj), clauses, pos),
+                    clauses,
+                    neg));
 }
 
 } // namespace bfl
