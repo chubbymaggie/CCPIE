@@ -93,36 +93,33 @@ namespace pie {
 
 inline std::string indent(unsigned i) { return std::string(i, ' '); }
 
-/* TODO: DummyForClang workaround for now. Should be removed once we have better
- * C++14 support */
+namespace detail {
 
-template <typename T, template <typename...> typename C>
-inline std::enable_if_t<std::is_integral<T>::value,
-                        boost::log::formatting_ostream &>
+template <bool B, class T>
+struct int_or_T {
+  typedef T type;
+};
+
+template <class T>
+struct int_or_T<true, T> {
+  typedef int_fast64_t type;
+};
+
+} // namespace detail
+
+template <typename T,
+          template <typename...> typename C,
+          typename I =
+              typename detail::int_or_T<std::is_integral<T>::value, T>::type>
+inline boost::log::formatting_ostream &
 operator<<(boost::log::formatting_ostream & o, const C<T> & v) {
   BOOST_CONCEPT_ASSERT((boost::Container<C<T>>));
 
   o << "[";
   if (v.size()) {
     auto it = v.cbegin();
-    o << " " << static_cast<int_fast64_t>(*it);
-    for (++it; it != v.cend(); ++it)
-      o << ", " << static_cast<int_fast64_t>(*it);
-  }
-  return o << " ]";
-}
-
-template <typename T, template <typename...> typename C>
-inline std::enable_if_t<!std::is_integral<T>::value,
-                        boost::log::formatting_ostream &>
-operator<<(boost::log::formatting_ostream & o, const C<T> & v) {
-  BOOST_CONCEPT_ASSERT((boost::Container<C<T>>));
-
-  o << "[";
-  if (v.size()) {
-    auto it = v.cbegin();
-    o << " " << *it;
-    for (++it; it != v.cend(); ++it) o << ", " << *it;
+    o << " " << static_cast<I>(*it);
+    for (++it; it != v.cend(); ++it) o << ", " << static_cast<I>(*it);
   }
   return o << " ]";
 }
