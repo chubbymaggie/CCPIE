@@ -22,7 +22,7 @@ public:
            std::vector<ArgT> &&);
 
   template <typename Learner, typename Formatter>
-  FormatT inferCNF() const;
+  std::pair<bfl::LearnerStatus, FormatT> inferCNF() const;
 
   PIEngine<ArgT, ResT, FormatT> & add_test(ArgT &&);
 

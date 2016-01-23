@@ -5,6 +5,8 @@
 #include <unordered_set>
 #include <vector>
 
+#include <boost/concept/assert.hpp>
+
 #include "pie/config.h"
 
 #include "pie/Log.h"
@@ -14,14 +16,22 @@
 namespace pie {
 namespace bfl {
 
-template <template <typename...> typename SeqContainer = std::vector,
+template <template <typename...> typename BackSequence = std::vector,
           template <typename...> typename UniqueContainer = std::unordered_set>
 class SimpleLearner
-    : public ILearner<SimpleLearner<SeqContainer, UniqueContainer>,
-                      SeqContainer> {
+    : public ILearner<SimpleLearner<BackSequence, UniqueContainer>,
+                      BackSequence> {
+  BOOST_CONCEPT_ASSERT((boost::BackInsertionSequence<BackSequence<int>>));
+  BOOST_CONCEPT_ASSERT((boost::Container<UniqueContainer<int>>));
+
+  /* TODO: Should actually check
+  BOOST_CONCEPT_ASSERT(
+      (boost::UnorderedAssociativeContainer<UniqueContainer<int>>));
+  */
+
 public:
   using __base =
-      ILearner<SimpleLearner<SeqContainer, UniqueContainer>, SeqContainer>;
+      ILearner<SimpleLearner<BackSequence, UniqueContainer>, BackSequence>;
   using LearnerResult = typename __base::LearnerResult;
 
   using CNF = typename __base::CNF;
@@ -32,11 +42,11 @@ public:
     bad_function_error() : logic_error("Impossible boolean function!") {}
   };
 
-  using ILearner<SimpleLearner<SeqContainer, UniqueContainer>,
-                 SeqContainer>::ILearner;
+  using ILearner<SimpleLearner<BackSequence, UniqueContainer>,
+                 BackSequence>::ILearner;
 
   SimpleLearner(FeatureID nfeature)
-      : ILearner<SimpleLearner<SeqContainer, UniqueContainer>, SeqContainer>(
+      : ILearner<SimpleLearner<BackSequence, UniqueContainer>, BackSequence>(
             nfeature) {
     INFO << "SimpleLearner instantiated with "
          << static_cast<int_fast64_t>(nfeature) << " F";

@@ -8,8 +8,8 @@
 namespace pie {
 namespace bfl {
 
-template <typename Derived, template <typename...> typename SeqContainer>
-const BitVector & ILearner<Derived, SeqContainer>::
+template <typename Derived, template <typename...> typename BackSequence>
+const BitVector & ILearner<Derived, BackSequence>::
 operator[](const TestID & test_id) const {
   const auto & tv_id_view = boost::multi_index::get<tag::by_id>(test_set);
   const auto & t_it = tv_id_view.find(test_id);
@@ -20,8 +20,8 @@ operator[](const TestID & test_id) const {
     return t_it->features;
 }
 
-template <typename Derived, template <typename...> typename SeqContainer>
-TestInfo ILearner<Derived, SeqContainer>::
+template <typename Derived, template <typename...> typename BackSequence>
+TestInfo ILearner<Derived, BackSequence>::
 operator()(const TestID & test_id) const {
   const auto & tv_id_view = boost::multi_index::get<tag::by_id>(test_set);
   const auto & t_it = tv_id_view.find(test_id);
@@ -32,16 +32,16 @@ operator()(const TestID & test_id) const {
     return *t_it;
 }
 
-template <typename Derived, template <typename...> typename SeqContainer>
-Derived & ILearner<Derived, SeqContainer>::operator+=(TestInfo && new_test) {
+template <typename Derived, template <typename...> typename BackSequence>
+Derived & ILearner<Derived, BackSequence>::operator+=(TestInfo && new_test) {
   if (new_test.id == 0) new_test.id = test_set.size();
   test_set.insert(std::move(new_test));
   return static_cast<Derived &>(*this);
 }
 
-template <typename Derived, template <typename...> typename SeqContainer>
-Derived & ILearner<Derived, SeqContainer>::
-operator<<=(SeqContainer<TestInfo> && new_tests) {
+template <typename Derived, template <typename...> typename BackSequence>
+Derived & ILearner<Derived, BackSequence>::
+operator<<=(BackSequence<TestInfo> && new_tests) {
   while (!new_tests.empty()) {
     (*this) += std::move(new_tests.back());
     new_tests.pop_back();
@@ -49,10 +49,10 @@ operator<<=(SeqContainer<TestInfo> && new_tests) {
   return static_cast<Derived &>(*this);
 }
 
-template <typename Derived, template <typename...> typename SeqContainer>
-SeqContainer<SeqContainer<TestID>>
-ILearner<Derived, SeqContainer>::conflictedTests() const {
-  SeqContainer<SeqContainer<TestID>> conflicted_groups;
+template <typename Derived, template <typename...> typename BackSequence>
+BackSequence<BackSequence<TestID>>
+ILearner<Derived, BackSequence>::conflictedTests() const {
+  BackSequence<BackSequence<TestID>> conflicted_groups;
 
   const auto & fv_view = boost::multi_index::get<tag::by_fvector>(test_set);
   for (auto fv_it = fv_view.begin(); fv_it != fv_view.end();) {
@@ -69,7 +69,7 @@ ILearner<Derived, SeqContainer>::conflictedTests() const {
     fv_it = bounds.second;
 
     if (conflict) {
-      SeqContainer<TestID> group;
+      BackSequence<TestID> group;
       for (auto & it = bounds.first; it != bounds.second; ++it)
         group.push_back(it->id);
       conflicted_groups.push_back(group);

@@ -3,11 +3,6 @@ cmake_minimum_required(VERSION 2.8)
 
 project(pie CXX)
 
-# TODO: Till we find a workaround for Clang bug, just disable Clang compilation
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-  message (FATAL_ERROR "Because of a clang bug, PIE fails to compile.\nPlease use GCC.")
-endif()
-
 set(CMAKE_VERBOSE_MAKEFILE OFF)
 
 
@@ -19,7 +14,7 @@ find_package(Boost 1.55.0 COMPONENTS
                    log log_setup thread filesystem date_time system REQUIRED)
 
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -std=c++1z")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -Wno-unused-local-typedef -std=c++1z")
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")

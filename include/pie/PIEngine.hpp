@@ -22,7 +22,8 @@ namespace pie {
 
 template <typename ArgT, typename ResT, class FormatT>
 template <typename Learner, typename Formatter>
-FormatT PIEngine<ArgT, ResT, FormatT>::inferCNF() const {
+std::pair<bfl::LearnerStatus, FormatT>
+PIEngine<ArgT, ResT, FormatT>::inferCNF() const {
   Learner learner(features.size());
 
   INFO << "Invoking boolean function learner ...";
@@ -39,13 +40,11 @@ FormatT PIEngine<ArgT, ResT, FormatT>::inferCNF() const {
                 post.first(t, detail::callExceptionSafe(func, t))};
   }
   auto result = learner.learnCNF();
-
-  if (result.first == pie::bfl::FAIL)
-    throw std::runtime_error("FAILED");
-  else if (result.first == pie::bfl::BAD_FUNCTION)
-    throw std::runtime_error("BAD FUNCTION");
-
   Formatter formatter;
+
+  if (result.first != bfl::PASS)
+    return {result.first, formatter.format({{}})};
+
   typename Formatter::FormatCNF format_cnf;
   for (auto && c : result.second) {
     typename Formatter::FormatCNF::value_type nc;
@@ -61,7 +60,7 @@ FormatT PIEngine<ArgT, ResT, FormatT>::inferCNF() const {
 
   auto final_cnf = formatter.format(format_cnf);
   INFO << "Result = " << final_cnf;
-  return final_cnf;
+  return {bfl::PASS, final_cnf};
 }
 
 template <typename ArgT, typename ResT, class FormatT>

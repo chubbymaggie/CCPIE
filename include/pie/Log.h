@@ -4,13 +4,15 @@
 #include <string>
 #include <type_traits>
 
-#include <boost/log/trivial.hpp>
-#include <boost/log/sources/global_logger_storage.hpp>
+#include <boost/concept/assert.hpp>
+#include <boost/concept_check.hpp>
 
-#include "pie/Traits.h"
+#include <boost/log/sources/global_logger_storage.hpp>
+#include <boost/log/trivial.hpp>
 
 typedef boost::log::sources::severity_logger<
-    boost::log::trivial::severity_level> pie_logger_t;
+    boost::log::trivial::severity_level>
+    pie_logger_t;
 
 BOOST_LOG_GLOBAL_LOGGER(pie_logger, pie_logger_t);
 
@@ -91,14 +93,15 @@ namespace pie {
 
 inline std::string indent(unsigned i) { return std::string(i, ' '); }
 
-/* TODO: The following definitions trigger clang bug.
- *       Implement a workaround? Dummy template param? */
+/* TODO: DummyForClang workaround for now. Should be removed once we have better
+ * C++14 support */
 
-template <typename T,
-          template <typename...> typename C,
-          EnableIfAny<std::is_integral<T>>...>
-inline boost::log::formatting_ostream &
+template <typename T, template <typename...> typename C>
+inline std::enable_if_t<std::is_integral<T>::value,
+                        boost::log::formatting_ostream &>
 operator<<(boost::log::formatting_ostream & o, const C<T> & v) {
+  BOOST_CONCEPT_ASSERT((boost::Container<C<T>>));
+
   o << "[";
   if (v.size()) {
     auto it = v.cbegin();
@@ -109,11 +112,12 @@ operator<<(boost::log::formatting_ostream & o, const C<T> & v) {
   return o << " ]";
 }
 
-template <typename T,
-          template <typename...> typename C,
-          DisableIfAny<std::is_integral<T>>...>
-inline boost::log::formatting_ostream &
+template <typename T, template <typename...> typename C>
+inline std::enable_if_t<!std::is_integral<T>::value,
+                        boost::log::formatting_ostream &>
 operator<<(boost::log::formatting_ostream & o, const C<T> & v) {
+  BOOST_CONCEPT_ASSERT((boost::Container<C<T>>));
+
   o << "[";
   if (v.size()) {
     auto it = v.cbegin();

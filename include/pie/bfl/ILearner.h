@@ -4,11 +4,13 @@
 #include <utility>
 #include <vector>
 
+#include <boost/concept/assert.hpp>
+#include <boost/concept_check.hpp>
+
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/hashed_index.hpp>
 #include <boost/multi_index/member.hpp>
 
-#include <boost/spirit/home/support/container.hpp>
 
 #include "pie/config.h"
 
@@ -31,11 +33,13 @@ struct by_id {};
 enum LearnerStatus { PASS, FAIL, BAD_FUNCTION };
 
 template <typename Derived,
-          template <typename...> typename SeqContainer = std::vector>
+          template <typename...> typename BackSequence = std::vector>
 class ILearner {
+  BOOST_CONCEPT_ASSERT((boost::BackInsertionSequence<BackSequence<int>>));
+
 public:
-  using ConflictGroup = SeqContainer<TestID>;
-  using CNF = SeqContainer<SeqContainer<FeatureID>>;
+  using ConflictGroup = BackSequence<TestID>;
+  using CNF = BackSequence<BackSequence<FeatureID>>;
   using LearnerResult = std::pair<LearnerStatus, CNF>;
 
   virtual ~ILearner(){};
@@ -47,9 +51,9 @@ public:
 
   virtual Derived & operator+=(TestInfo &&);
 
-  virtual Derived & operator<<=(SeqContainer<TestInfo> &&);
+  virtual Derived & operator<<=(BackSequence<TestInfo> &&);
 
-  virtual SeqContainer<ConflictGroup> conflictedTests() const;
+  virtual BackSequence<ConflictGroup> conflictedTests() const;
 
   virtual LearnerResult learnCNF() const = 0;
 

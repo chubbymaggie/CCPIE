@@ -12,6 +12,13 @@ namespace detail {
  * each Operator.
  *
  * TODO: Can we verify in compile-time that all Operators have been specified?
+ *
+ * TODO: Get rid of the "virtual" but still ensure that all functions are
+ * defined by derived classes.
+ *
+ * TODO: Make the AND+OR handle any Container, not just PushBackContainer. This
+ * would require templates (which would conflict with virtuals). So solve the
+ * previous TODO first!!
  */
 
 template <typename Format,
