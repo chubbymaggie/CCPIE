@@ -22,7 +22,7 @@ namespace detail {
  */
 
 template <typename Format,
-          template <typename...> typename PushBackContainer = std::vector>
+          template <typename...> class PushBackContainer = std::vector>
 class IFormatter {
 public:
   using FormatT = Format;

@@ -107,10 +107,10 @@ struct int_or_T<true, T> {
 
 } // namespace detail
 
-template <typename T,
-          template <typename...> typename C,
-          typename I =
-              typename detail::int_or_T<std::is_integral<T>::value, T>::type>
+template <
+    typename T,
+    template <typename...> class C,
+    typename I = typename detail::int_or_T<std::is_integral<T>::value, T>::type>
 inline boost::log::formatting_ostream &
 operator<<(boost::log::formatting_ostream & o, const C<T> & v) {
   BOOST_CONCEPT_ASSERT((boost::Container<C<T>>));

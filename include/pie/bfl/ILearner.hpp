@@ -8,7 +8,7 @@
 namespace pie {
 namespace bfl {
 
-template <typename Derived, template <typename...> typename BackSequence>
+template <typename Derived, template <typename...> class BackSequence>
 const BitVector & ILearner<Derived, BackSequence>::
 operator[](const TestID & test_id) const {
   const auto & tv_id_view = boost::multi_index::get<tag::by_id>(test_set);
@@ -20,7 +20,7 @@ operator[](const TestID & test_id) const {
     return t_it->features;
 }
 
-template <typename Derived, template <typename...> typename BackSequence>
+template <typename Derived, template <typename...> class BackSequence>
 TestInfo ILearner<Derived, BackSequence>::
 operator()(const TestID & test_id) const {
   const auto & tv_id_view = boost::multi_index::get<tag::by_id>(test_set);
@@ -32,14 +32,14 @@ operator()(const TestID & test_id) const {
     return *t_it;
 }
 
-template <typename Derived, template <typename...> typename BackSequence>
+template <typename Derived, template <typename...> class BackSequence>
 Derived & ILearner<Derived, BackSequence>::operator+=(TestInfo && new_test) {
   if (new_test.id == 0) new_test.id = test_set.size();
   test_set.insert(std::move(new_test));
   return static_cast<Derived &>(*this);
 }
 
-template <typename Derived, template <typename...> typename BackSequence>
+template <typename Derived, template <typename...> class BackSequence>
 Derived & ILearner<Derived, BackSequence>::
 operator<<=(BackSequence<TestInfo> && new_tests) {
   while (!new_tests.empty()) {
@@ -49,7 +49,7 @@ operator<<=(BackSequence<TestInfo> && new_tests) {
   return static_cast<Derived &>(*this);
 }
 
-template <typename Derived, template <typename...> typename BackSequence>
+template <typename Derived, template <typename...> class BackSequence>
 BackSequence<BackSequence<TestID>>
 ILearner<Derived, BackSequence>::conflictedTests() const {
   BackSequence<BackSequence<TestID>> conflicted_groups;

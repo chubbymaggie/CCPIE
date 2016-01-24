@@ -6,7 +6,7 @@
 namespace pie {
 namespace formats {
 
-template <template <typename...> typename PushBackContainer>
+template <template <typename...> class PushBackContainer>
 std::string
 Human<PushBackContainer>::AND(const PushBackContainer<std::string> & v) {
   if (v.empty()) return "";
@@ -19,7 +19,7 @@ Human<PushBackContainer>::AND(const PushBackContainer<std::string> & v) {
   return res;
 }
 
-template <template <typename...> typename PushBackContainer>
+template <template <typename...> class PushBackContainer>
 std::string
 Human<PushBackContainer>::OR(const PushBackContainer<std::string> & v) {
   if (v.empty()) return "";

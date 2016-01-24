@@ -9,7 +9,7 @@
 namespace pie {
 namespace formats {
 
-template <template <typename...> typename PushBackContainer = std::vector>
+template <template <typename...> class PushBackContainer = std::vector>
 class SMTLIB2 : public detail::IFormatter<std::string, PushBackContainer> {
 public:
   using Format = std::string;

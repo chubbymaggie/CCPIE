@@ -11,8 +11,8 @@
 namespace pie {
 namespace bfl {
 
-template <template <typename...> typename SeqContainer,
-          template <typename...> typename UniqueContainer>
+template <template <typename...> class SeqContainer,
+          template <typename...> class UniqueContainer>
 typename SimpleLearner<SeqContainer, UniqueContainer>::LearnerResult
 SimpleLearner<SeqContainer, UniqueContainer>::learnCNF() const {
   if (this->conflictedTests().size()) return {BAD_FUNCTION, {}};
@@ -62,8 +62,8 @@ SimpleLearner<SeqContainer, UniqueContainer>::learnCNF() const {
   return {FAIL, {}};
 }
 
-template <template <typename...> typename SeqContainer,
-          template <typename...> typename UniqueContainer>
+template <template <typename...> class SeqContainer,
+          template <typename...> class UniqueContainer>
 typename SimpleLearner<SeqContainer, UniqueContainer>::RndAccessCNF
 SimpleLearner<SeqContainer, UniqueContainer>::genAllClauses(
     LiteralID max_clause_size, FeatureID max_feature_id, bool negated_vars) {
@@ -111,8 +111,8 @@ SimpleLearner<SeqContainer, UniqueContainer>::genAllClauses(
   return clauses;
 }
 
-template <template <typename...> typename SeqContainer,
-          template <typename...> typename UniqueContainer>
+template <template <typename...> class SeqContainer,
+          template <typename...> class UniqueContainer>
 UniqueContainer<ClauseID>
 SimpleLearner<SeqContainer, UniqueContainer>::pruneClausesWithPositives(
     UniqueContainer<ClauseID> && conj,
@@ -132,8 +132,8 @@ SimpleLearner<SeqContainer, UniqueContainer>::pruneClausesWithPositives(
   return conj;
 }
 
-template <template <typename...> typename SeqContainer,
-          template <typename...> typename UniqueContainer>
+template <template <typename...> class SeqContainer,
+          template <typename...> class UniqueContainer>
 UniqueContainer<ClauseID>
 SimpleLearner<SeqContainer, UniqueContainer>::pruneClausesWithNegatives(
     UniqueContainer<ClauseID> && conj,
@@ -172,8 +172,8 @@ SimpleLearner<SeqContainer, UniqueContainer>::pruneClausesWithNegatives(
   return result;
 }
 
-template <template <typename...> typename SeqContainer,
-          template <typename...> typename UniqueContainer>
+template <template <typename...> class SeqContainer,
+          template <typename...> class UniqueContainer>
 UniqueContainer<ClauseID> SimpleLearner<SeqContainer, UniqueContainer>::
     learnStrongConjunctionOnAllClauses(
         UniqueContainer<ClauseID> && conj,
@@ -227,8 +227,8 @@ UniqueContainer<ClauseID> SimpleLearner<SeqContainer, UniqueContainer>::
   return result;
 }
 
-template <template <typename...> typename SeqContainer,
-          template <typename...> typename UniqueContainer>
+template <template <typename...> class SeqContainer,
+          template <typename...> class UniqueContainer>
 UniqueContainer<ClauseID>
 SimpleLearner<SeqContainer, UniqueContainer>::learnConjunctionOnAllClauses(
     typename SimpleLearner<SeqContainer, UniqueContainer>::RndAccessCNF &

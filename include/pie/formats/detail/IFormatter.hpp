@@ -8,7 +8,7 @@ namespace detail {
 #include <string>
 #include <vector>
 
-template <typename Format, template <typename...> typename PushBackContainer>
+template <typename Format, template <typename...> class PushBackContainer>
 Format IFormatter<Format, PushBackContainer>::format(
     const IFormatter<Format, PushBackContainer>::FormatCNF & cnf) {
   PushBackContainer<Format> conjuncts;

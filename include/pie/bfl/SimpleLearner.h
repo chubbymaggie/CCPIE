@@ -16,8 +16,8 @@
 namespace pie {
 namespace bfl {
 
-template <template <typename...> typename BackSequence = std::vector,
-          template <typename...> typename UniqueContainer = std::unordered_set>
+template <template <typename...> class BackSequence = std::vector,
+          template <typename...> class UniqueContainer = std::unordered_set>
 class SimpleLearner
     : public ILearner<SimpleLearner<BackSequence, UniqueContainer>,
                       BackSequence> {

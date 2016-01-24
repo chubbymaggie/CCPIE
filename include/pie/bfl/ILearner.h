@@ -33,7 +33,7 @@ struct by_id {};
 enum LearnerStatus { PASS, FAIL, BAD_FUNCTION };
 
 template <typename Derived,
-          template <typename...> typename BackSequence = std::vector>
+          template <typename...> class BackSequence = std::vector>
 class ILearner {
   BOOST_CONCEPT_ASSERT((boost::BackInsertionSequence<BackSequence<int>>));
 

@@ -8,8 +8,9 @@
 namespace pie {
 namespace formats {
 
-template <template <typename...> typename PushBackContainer>
-std::string SMTLIB2<PushBackContainer>::AND(const PushBackContainer<std::string> & v) {
+template <template <typename...> class PushBackContainer>
+std::string
+SMTLIB2<PushBackContainer>::AND(const PushBackContainer<std::string> & v) {
   if (v.empty()) return "";
   if (v.size() == 1) return *(v.cbegin());
 
@@ -19,8 +20,9 @@ std::string SMTLIB2<PushBackContainer>::AND(const PushBackContainer<std::string>
   return res;
 }
 
-template <template <typename...> typename PushBackContainer>
-std::string SMTLIB2<PushBackContainer>::OR(const PushBackContainer<std::string> & v) {
+template <template <typename...> class PushBackContainer>
+std::string
+SMTLIB2<PushBackContainer>::OR(const PushBackContainer<std::string> & v) {
   if (v.empty()) return "";
   if (v.size() == 1) return *(v.cbegin());
 
