@@ -14,7 +14,7 @@ typedef boost::log::sources::severity_logger<
     boost::log::trivial::severity_level>
     pie_logger_t;
 
-BOOST_LOG_GLOBAL_LOGGER(pie_logger, pie_logger_t);
+BOOST_LOG_GLOBAL_LOGGER(pie_logger, pie_logger_t)
 
 /* clang-format off */
 

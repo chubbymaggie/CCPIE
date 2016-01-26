@@ -10,6 +10,11 @@ addons:
 
 
 matrix:
+  # TODO: GCC has weird link errors with Boost libraries.
+  # I don't see it on my system (Ubu 15.04). May be recompile Boost on Travis?
+  allow_failures:
+    - compiler: gcc
+
   include:
     - os: linux
       compiler: gcc
