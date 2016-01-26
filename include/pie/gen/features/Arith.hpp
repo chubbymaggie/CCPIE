@@ -15,7 +15,7 @@ namespace gen {
 constexpr static auto MUTUALLY_EXCLUSIVE_ONLY = true;
 
 template <typename Arith,
-          class =
+          typename =
               typename std::enable_if<std::is_arithmetic<Arith>::value>::type>
 class Features : public detail::FeaturesBase<Arith> {
 public:

@@ -16,6 +16,7 @@ matrix:
     - compiler: gcc
 
   include:
+    ### LINUX builds ----
     - os: linux
       compiler: gcc
       addons: &gcc49
@@ -71,6 +72,7 @@ matrix:
       addons: *clang38
       env: C_COMPILER=clang-3.8 CXX_COMPILER=clang++-3.8 BUILD_TYPE=Debug
 
+    ### TODO: Max OS X builds ----
 
 before_script:
   - export CXX=$CXX_COMPILER CC=$C_COMPILER
