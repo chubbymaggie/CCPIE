@@ -115,10 +115,7 @@ template <template <typename...> class SeqContainer,
           template <typename...> class UniqueContainer>
 UniqueContainer<ClauseID>
 SimpleLearner<SeqContainer, UniqueContainer>::pruneClausesWithPositives(
-    UniqueContainer<ClauseID> && conj,
-    typename SimpleLearner<SeqContainer, UniqueContainer>::RndAccessCNF &
-        clauses,
-    const UniqueContainer<BitVector> & pos) {
+    UniqueContainer<ClauseID> && conj, const UniqueContainer<BitVector> & pos) {
   for (auto && p : pos)
     for (auto ci = conj.begin(); ci != conj.end();)
       if (!p[*ci])
@@ -136,10 +133,7 @@ template <template <typename...> class SeqContainer,
           template <typename...> class UniqueContainer>
 UniqueContainer<ClauseID>
 SimpleLearner<SeqContainer, UniqueContainer>::pruneClausesWithNegatives(
-    UniqueContainer<ClauseID> && conj,
-    typename SimpleLearner<SeqContainer, UniqueContainer>::RndAccessCNF &
-        clauses,
-    UniqueContainer<BitVector> & neg) {
+    UniqueContainer<ClauseID> && conj, UniqueContainer<BitVector> & neg) {
   UniqueContainer<ClauseID> result;
 
   while (!neg.empty()) {
@@ -175,12 +169,9 @@ SimpleLearner<SeqContainer, UniqueContainer>::pruneClausesWithNegatives(
 template <template <typename...> class SeqContainer,
           template <typename...> class UniqueContainer>
 UniqueContainer<ClauseID> SimpleLearner<SeqContainer, UniqueContainer>::
-    learnStrongConjunctionOnAllClauses(
-        UniqueContainer<ClauseID> && conj,
-        typename SimpleLearner<SeqContainer, UniqueContainer>::RndAccessCNF &
-            clauses,
-        const UniqueContainer<BitVector> & pos,
-        UniqueContainer<BitVector> & neg) {
+    learnStrongConjunctionOnAllClauses(UniqueContainer<ClauseID> && conj,
+                                       const UniqueContainer<BitVector> & pos,
+                                       UniqueContainer<BitVector> & neg) {
   UniqueContainer<ClauseID> result;
 
   while (!neg.empty()) {
@@ -243,12 +234,9 @@ SimpleLearner<SeqContainer, UniqueContainer>::learnConjunctionOnAllClauses(
         << "C_all = " << static_cast<const UniqueContainer<ClauseID> &>(conj);
 
   return (strengthen
-              ? learnStrongConjunctionOnAllClauses(
-                    std::move(conj), clauses, pos, neg)
+              ? learnStrongConjunctionOnAllClauses(std::move(conj), pos, neg)
               : pruneClausesWithNegatives(
-                    pruneClausesWithPositives(std::move(conj), clauses, pos),
-                    clauses,
-                    neg));
+                    pruneClausesWithPositives(std::move(conj), pos), neg));
 }
 
 } // namespace bfl

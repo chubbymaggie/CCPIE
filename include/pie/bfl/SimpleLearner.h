@@ -64,17 +64,14 @@ public:
 
   static UniqueContainer<ClauseID>
   pruneClausesWithPositives(UniqueContainer<ClauseID> && conj,
-                            RndAccessCNF & clauses,
                             const UniqueContainer<BitVector> & pos);
 
   static UniqueContainer<ClauseID>
   pruneClausesWithNegatives(UniqueContainer<ClauseID> && conj,
-                            RndAccessCNF & clauses,
                             UniqueContainer<BitVector> & neg);
 
   static UniqueContainer<ClauseID>
   learnStrongConjunctionOnAllClauses(UniqueContainer<ClauseID> && conj,
-                                     RndAccessCNF & clauses,
                                      const UniqueContainer<BitVector> & pos,
                                      UniqueContainer<BitVector> & neg);
 
