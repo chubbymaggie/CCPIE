@@ -3,12 +3,16 @@
 
 #include <string>
 #include <type_traits>
+#include <unordered_set>
+#include <vector>
 
 #include <boost/concept/assert.hpp>
 #include <boost/concept_check.hpp>
 
 #include <boost/log/sources/global_logger_storage.hpp>
 #include <boost/log/trivial.hpp>
+
+#include "pie/detail/Log.h"
 
 typedef boost::log::sources::severity_logger<
     boost::log::trivial::severity_level>
@@ -83,7 +87,7 @@ BOOST_LOG_GLOBAL_LOGGER(pie_logger, pie_logger_t)
   if (!PIE_ERROR_LOGGING) {}                                                   \
   else BOOST_LOG_SEV(pie_logger::get(), boost::log::trivial::error)
 
-#define fatal                                                                  \
+#define FATAL                                                                  \
   if (!PIE_FATAL_LOGGING) {}                                                   \
   else BOOST_LOG_SEV(pie_logger::get(), boost::log::trivial::fatal)
 
@@ -93,37 +97,30 @@ namespace pie {
 
 inline std::string indent(unsigned i) { return std::string(i, ' '); }
 
-namespace detail {
+} // namespace pie
 
-template <bool B, class T>
-struct int_or_T {
-  typedef T type;
-};
+namespace boost {
+namespace log {
 
-template <class T>
-struct int_or_T<true, T> {
-  typedef int_fast64_t type;
-};
-
-} // namespace detail
-
-template <
-    typename T,
-    template <typename...> class C,
-    typename I = typename detail::int_or_T<std::is_integral<T>::value, T>::type>
-inline boost::log::formatting_ostream &
-operator<<(boost::log::formatting_ostream & o, const C<T> & v) {
-  BOOST_CONCEPT_ASSERT((boost::Container<C<T>>));
-
-  o << "[";
-  if (v.size()) {
-    auto it = v.cbegin();
-    o << " " << static_cast<I>(*it);
-    for (++it; it != v.cend(); ++it) o << ", " << static_cast<I>(*it);
-  }
-  return o << " ]";
+template <typename A, typename B>
+inline formatting_ostream & operator<<(formatting_ostream & o,
+                                       const std::pair<A, B> & p) {
+  return o << "( " << p.first << ", " << p.second << " )";
 }
 
-} // namespace pie
+template <typename T>
+inline formatting_ostream & operator<<(formatting_ostream & o,
+                                       const std::vector<T> & v) {
+  return pie::detail::writeToStream(o, v);
+}
+
+template <typename T>
+inline formatting_ostream & operator<<(formatting_ostream & o,
+                                       const std::unordered_set<T> & v) {
+  return pie::detail::writeToStream(o, v);
+}
+
+} // namespace log
+} // namespace boost
 
 #endif
