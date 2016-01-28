@@ -17,6 +17,8 @@ endif()
 
 include(boost)                                  # Boost libs and compiler flags
 
+include(targets)                                # Cutom targets
+
 set(CMAKE_CXX_FLAGS_LIST
   ${COMPILER_SPECIFIC_FLAGS_LIST}
   ${WARNING_FLAGS_LIST}
