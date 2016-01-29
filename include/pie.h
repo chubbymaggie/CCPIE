@@ -7,7 +7,7 @@
 #include "pie/formats/SMTLIB2.h"
 
 #include "pie/gen/Features.h"
-//#include "pie/gen/Tests.h"
+#include "pie/gen/Tests.h"
 
 #include "pie/PIEngine.h"
 
