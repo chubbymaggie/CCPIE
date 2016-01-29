@@ -3,11 +3,13 @@
 
 #include <boost/concept/assert.hpp>
 
-#include "pie/gen/tests/Int.hpp"
+#include "pie/gen/tests/Integers.hpp"
 #include "pie/gen/tests/String.hpp"
 
 #include "pie/gen/tests/Pair.hpp"
-#include "pie/gen/tests/Vector.hpp"
+
+#include "pie/gen/tests/InsertContainers.hpp"
+#include "pie/gen/tests/PushBackContainers.hpp"
 
 namespace pie {
 namespace gen {

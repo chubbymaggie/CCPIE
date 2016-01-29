@@ -1,7 +1,7 @@
-#ifndef __PIE_GEN_DETAILS_TESTS_H__
-#define __PIE_GEN_DETAILS_TESTS_H__
+#ifndef __PIE_GEN_DETAIL_TESTS_H__
+#define __PIE_GEN_DETAIL_TESTS_H__
 
-#include <type_traits>
+#include "pie/Traits.h"
 
 namespace pie {
 namespace gen {
@@ -17,15 +17,14 @@ protected:
   RandGen & rnd_gen;
 };
 
-template <
-    typename RandGen,
-    typename Dist,
-    typename T,
-    typename = /* Tag for integral data types */
-    typename std::integral_constant<bool, std::is_integral<T>::value>::type>
+} // namespace detail
+
+template <typename RandGen,
+          typename Dist,
+          typename T,
+          typename = typename pie::traits::TypePropertyCodeSum<T>>
 class Tests;
 
-} // namespace detail
 } // namespace gen
 } // namespace pie
 
