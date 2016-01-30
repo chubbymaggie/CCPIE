@@ -17,7 +17,7 @@ int main() {
   INFO << "Welcome to PIE Runner!";
 
   {
-    pie::PIEngine<int, int, Formatter::FormatT> pie(
+    pie::PIEngine<int, int, Formatter> pie(
 
         pie::gen::Features<Formatter, int>({"i"})[true],
 
@@ -28,7 +28,7 @@ int main() {
 
         pie::gen::testSequence<std::vector, int>(1024, udist, rand_gen));
 
-    auto pre = pie.inferCNF<Learner, Formatter>();
+    auto pre = pie.inferCNF<Learner>();
     if (pre.first != pie::bfl::PASS)
       ERROR << "Precondition Inference Failure";
     else {

@@ -8,9 +8,10 @@
 
 namespace pie {
 
-template <typename ArgT, typename ResT, typename FormatT>
+template <typename ArgT, typename ResT, typename Formatter>
 class PIEngine {
 public:
+  using FormatT = typename Formatter::FormatT;
   using FeatureT =
       std::pair<std::function<boost::optional<bool>(ArgT)>, FormatT>;
   using PostT =
@@ -21,12 +22,12 @@ public:
            PostT &&,
            std::vector<ArgT> &&);
 
-  template <typename Learner, typename Formatter>
+  template <typename Learner>
   std::pair<bfl::LearnerStatus, FormatT> inferCNF() const;
 
-  PIEngine<ArgT, ResT, FormatT> & add_test(ArgT &&);
+  PIEngine<ArgT, ResT, Formatter> & add_test(ArgT &&);
 
-  PIEngine<ArgT, ResT, FormatT> &
+  PIEngine<ArgT, ResT, Formatter> &
   add_feature(std::pair<std::function<bool(ArgT)>, FormatT> &&);
 
 protected:

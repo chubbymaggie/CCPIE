@@ -13,7 +13,7 @@ class Features<Formatter, Integer, pie::traits::type_categories::Integer>
   using __base = detail::FeaturesBase<Formatter, Integer, 1>;
 
 public:
-  using __base::FeaturesBase;
+  using detail::FeaturesBase<Formatter, Integer, 1>::FeaturesBase;
 
   typename __base::FeatureCollection
   operator[](bool mutually_exclusive_only) const {

@@ -20,10 +20,10 @@ namespace pie {
 /* TODO: Cache learner state instead of constructing a new instance for every
  * call to inferCNF */
 
-template <typename ArgT, typename ResT, class FormatT>
-template <typename Learner, typename Formatter>
-std::pair<bfl::LearnerStatus, FormatT>
-PIEngine<ArgT, ResT, FormatT>::inferCNF() const {
+template <typename ArgT, typename ResT, typename Formatter>
+template <typename Learner>
+std::pair<bfl::LearnerStatus, typename Formatter::FormatT>
+PIEngine<ArgT, ResT, Formatter>::inferCNF() const {
   Learner learner(features.size());
 
   INFO << "Invoking boolean function learner ...";
@@ -42,8 +42,7 @@ PIEngine<ArgT, ResT, FormatT>::inferCNF() const {
   auto result = learner.learnCNF();
   Formatter formatter;
 
-  if (result.first != bfl::PASS)
-    return {result.first, formatter.format({{}})};
+  if (result.first != bfl::PASS) return {result.first, formatter.format({{}})};
 
   typename Formatter::FormatCNF format_cnf;
   for (auto && c : result.second) {
@@ -63,17 +62,17 @@ PIEngine<ArgT, ResT, FormatT>::inferCNF() const {
   return {bfl::PASS, final_cnf};
 }
 
-template <typename ArgT, typename ResT, class FormatT>
-PIEngine<ArgT, ResT, FormatT> &
-PIEngine<ArgT, ResT, FormatT>::add_test(ArgT && t) {
+template <typename ArgT, typename ResT, typename Formatter>
+PIEngine<ArgT, ResT, Formatter> &
+PIEngine<ArgT, ResT, Formatter>::add_test(ArgT && t) {
   INFO << "Added new test: " << t;
   tests.push_back(t);
   return *this;
 }
 
-template <typename ArgT, typename ResT, class FormatT>
-PIEngine<ArgT, ResT, FormatT> & PIEngine<ArgT, ResT, FormatT>::add_feature(
-    std::pair<std::function<bool(ArgT)>, FormatT> && f) {
+template <typename ArgT, typename ResT, typename Formatter>
+PIEngine<ArgT, ResT, Formatter> & PIEngine<ArgT, ResT, Formatter>::add_feature(
+    std::pair<std::function<bool(ArgT)>, typename Formatter::FormatT> && f) {
   INFO << "Added new feature: " << f.second;
 
   /* clang-format off */
@@ -90,9 +89,10 @@ PIEngine<ArgT, ResT, FormatT> & PIEngine<ArgT, ResT, FormatT>::add_feature(
 /* clang-format on */
 }
 
-template <typename ArgT, typename ResT, class FormatT>
-PIEngine<ArgT, ResT, FormatT>::PIEngine(
-    std::vector<std::pair<std::function<bool(ArgT)>, FormatT>> && fs,
+template <typename ArgT, typename ResT, typename Formatter>
+PIEngine<ArgT, ResT, Formatter>::PIEngine(
+    std::vector<std::pair<std::function<bool(ArgT)>,
+                          typename Formatter::FormatT>> && fs,
     std::function<ResT(ArgT)> && f,
     PostT && p,
     std::vector<ArgT> && ts)
