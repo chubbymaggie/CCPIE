@@ -19,7 +19,7 @@ int main() {
   {
     pie::PIEngine<int, int, Formatter::FormatT> pie(
 
-        pie::gen::Features<int>({"i"})[Formatter()],
+        pie::gen::Features<Formatter, int>({"i"})[true],
 
         [](int i) { return i > 0 ? i : -i; },
 
