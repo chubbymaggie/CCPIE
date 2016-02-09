@@ -8,16 +8,9 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 include(compilers)                              # compiler-specific flags
 include(warnings)                               # emabled warning and errors
-
-if(CMAKE_BUILD_TYPE MATCHES Debug)
-  include(debug)                                # compiler flags & PIE configs
-else()
-  include(release)                              # compiler flags & PIE configs
-endif()
-
+include(configure)                              # build configurations
 include(boost)                                  # Boost libs and compiler flags
-
-include(targets)                                # Cutom targets
+include(targets)                                # custom targets
 
 set(CMAKE_CXX_FLAGS_LIST
   ${COMPILER_SPECIFIC_FLAGS_LIST}
