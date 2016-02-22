@@ -7,10 +7,9 @@
 #include <boost/concept/assert.hpp>
 #include <boost/concept_check.hpp>
 
-#include <boost/multi_index_container.hpp>
 #include <boost/multi_index/hashed_index.hpp>
 #include <boost/multi_index/member.hpp>
-
+#include <boost/multi_index_container.hpp>
 
 #include "pie/config.h"
 

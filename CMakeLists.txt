@@ -17,7 +17,7 @@ set(CMAKE_CXX_FLAGS_LIST
   ${WARNING_FLAGS_LIST}
   ${BUILD_FLAGS_LIST}
   ${BOOST_COMPILER_FLAGS_LIST}
-)
+  )
 string(REPLACE ";" " " CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_LIST}")
 
 
@@ -28,8 +28,8 @@ include_directories(pie PUBLIC include)
 add_executable(pie
   src/pie/Log.cpp
   src/pie.cpp
-)
+  )
 target_link_libraries(pie
   ${Boost_LIBRARIES}
   rt                                            # Why? I don't need this on my PC
-)
+  )
