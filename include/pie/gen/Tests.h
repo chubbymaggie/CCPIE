@@ -7,6 +7,7 @@
 #include "pie/gen/tests/String.hpp"
 
 #include "pie/gen/tests/Pair.hpp"
+#include "pie/gen/tests/Tuple.hpp"
 
 #include "pie/gen/tests/BackPushers.hpp"
 #include "pie/gen/tests/Inserters.hpp"
