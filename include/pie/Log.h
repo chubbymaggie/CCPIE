@@ -108,16 +108,22 @@ inline formatting_ostream & operator<<(formatting_ostream & o,
   return o << "( " << p.first << ", " << p.second << " )";
 }
 
-template <typename T>
+template <typename... Ts>
 inline formatting_ostream & operator<<(formatting_ostream & o,
-                                       const std::vector<T> & v) {
-  return pie::detail::writeToStream(o, v);
+                                       const std::tuple<Ts...> & t) {
+  return pie::detail::writeTupleToStream(o, t, std::index_sequence_for<Ts...>{});
 }
 
 template <typename T>
 inline formatting_ostream & operator<<(formatting_ostream & o,
-                                       const std::unordered_set<T> & v) {
-  return pie::detail::writeToStream(o, v);
+                                       const std::vector<T> & v) {
+  return pie::detail::writeContainerToStream(o, v);
+}
+
+template <typename T>
+inline formatting_ostream & operator<<(formatting_ostream & o,
+                                       const std::unordered_set<T> & s) {
+  return pie::detail::writeContainerToStream(o, s);
 }
 
 } // namespace log

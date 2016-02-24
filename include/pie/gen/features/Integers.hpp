@@ -9,11 +9,11 @@ namespace gen {
 
 template <typename Formatter, typename Integer>
 class Features<Formatter, Integer, pie::traits::type_categories::Integer>
-    : public detail::FeaturesBase<Formatter, Integer, 1> {
-  using __base = detail::FeaturesBase<Formatter, Integer, 1>;
+    : public detail::FeaturesBase<Formatter, Integer> {
+  using __base = detail::FeaturesBase<Formatter, Integer>;
 
 public:
-  using detail::FeaturesBase<Formatter, Integer, 1>::FeaturesBase;
+  using detail::FeaturesBase<Formatter, Integer>::FeaturesBase;
 
   typename __base::FeatureCollection
   operator[](bool mutually_exclusive_only) const {
@@ -22,12 +22,13 @@ public:
     auto b = formatter.constant("0");
 
     typename __base::FeatureCollection res = {
-        {[](Integer a) { return a > 0; }, formatter.GT(a, b)},
-        {[](Integer a) { return a == 0; }, formatter.EQ(a, b)},
+        {[](const Integer & a) { return a > 0; }, formatter.GT(a, b)},
+        {[](const Integer & a) { return a == 0; }, formatter.EQ(a, b)},
     };
 
     if (!mutually_exclusive_only) {
-      res.push_back({[](Integer a) { return a < 0; }, formatter.LT(a, b)});
+      res.push_back(
+          {[](const Integer & a) { return a < 0; }, formatter.LT(a, b)});
     }
 
     return res;

@@ -2,42 +2,54 @@
 #define __PIE_PIENGINE_H__
 
 #include <functional>
+#include <tuple>
 #include <utility>
 
 #include <boost/optional.hpp>
 
 namespace pie {
 
-template <typename ArgT, typename ResT, typename Formatter>
+template <typename ResT, typename Formatter, typename... ArgT>
 class PIEngine {
 public:
   using FormatT = typename Formatter::FormatT;
-  using FeatureT =
-      std::pair<std::function<boost::optional<bool>(ArgT)>, FormatT>;
-  using PostT =
-      std::pair<std::function<bool(ArgT, boost::optional<ResT>)>, FormatT>;
 
-  PIEngine(std::vector<std::pair<std::function<bool(ArgT)>, FormatT>> &&,
-           std::function<ResT(ArgT)> &&,
-           PostT &&,
-           std::vector<ArgT> &&);
+  using FeatureT = std::pair<
+      std::function<boost::optional<bool>(const std::tuple<ArgT...> &)>,
+      FormatT>;
+
+  using PostT = std::pair<std::function<bool(const std::tuple<ArgT...> &,
+                                             const boost::optional<ResT> &)>,
+                          FormatT>;
+
+  /* TODO: Make an overloaded constructor for the case when ArgT... is only one
+   * type. Then the tests can just be of type ArgT, instead of tuple<ArgT...>*/
+  PIEngine(const std::function<ResT(const ArgT &...)> &,
+           const std::pair<std::function<bool(const boost::optional<ResT> &,
+                                              const ArgT &...)>,
+                           FormatT> &,
+           const std::vector<std::tuple<ArgT...>> &,
+           const std::vector<
+               std::pair<std::function<bool(const ArgT &...)>, FormatT>> &);
 
   template <typename Learner>
   std::pair<bfl::LearnerStatus, FormatT> inferCNF() const;
 
-  PIEngine<ArgT, ResT, Formatter> & add_test(ArgT &&);
+  PIEngine & add_test(const ArgT &&...);
+  PIEngine & add_test(const std::tuple<ArgT...> &);
 
-  PIEngine<ArgT, ResT, Formatter> &
-  add_feature(std::pair<std::function<bool(ArgT)>, FormatT> &&);
+  PIEngine &
+  add_feature(const std::pair<std::function<bool(const ArgT &...)>, FormatT> &);
 
 protected:
-  std::vector<FeatureT> features;
-  const std::function<ResT(ArgT)> func;
+  const std::function<boost::optional<ResT>(const std::tuple<ArgT...> &)> func;
   const PostT post;
-  std::vector<ArgT> tests;
-  int orig_tests, orig_features;
+  std::vector<std::tuple<ArgT...>> tests;
+  std::vector<FeatureT> features;
+  unsigned int orig_tests, orig_features;
 };
-}
+
+} // namespace pie
 
 #include "PIEngine.hpp"
 

@@ -1,5 +1,6 @@
 #include <iostream>
 #include <random>
+#include <tuple>
 #include <vector>
 
 #include <boost/optional.hpp>
@@ -7,32 +8,37 @@
 #include "pie.h"
 
 int main() {
-  using Formatter = pie::formats::Human<>;
-  using Learner = pie::bfl::SimpleLearner<>;
+  using namespace std;
+  using namespace pie;
 
-  std::random_device rd;
-  std::default_random_engine rand_gen(rd());
-  std::uniform_int_distribution<int> udist(-5, 5);
+  using Formatter = formats::Human<>;
+  using Learner = bfl::SimpleLearner<>;
+
+  random_device rd;
+  default_random_engine rand_gen(rd());
+  uniform_int_distribution<int> udist(-5, 5);
 
   INFO << "Welcome to PIE Runner!";
 
   {
-    pie::PIEngine<int, int, Formatter> pie(
+    PIEngine<int, Formatter, int> pie(
 
-        pie::gen::Features<Formatter, int>({"i"})[true],
+        [](const int & i) { return i > 0 ? i : -i; },
 
-        [](int i) { return i > 0 ? i : -i; },
-
-        {[](int i, boost::optional<int> r) { return r && i == *r; },
+        {[](const boost::optional<int> & result, const int & input) {
+           return result && input == *result;
+         },
          "identity"},
 
-        pie::gen::testSequence<std::vector, int>(1024, udist, rand_gen));
+        gen::testSequence<vector, tuple<int>>(1024, udist, rand_gen),
+
+        gen::Features<Formatter, int>({"i"})[true]);
 
     auto pre = pie.inferCNF<Learner>();
-    if (pre.first != pie::bfl::PASS)
+    if (pre.first != bfl::PASS)
       ERROR << "Precondition Inference Failure";
     else {
-      std::cout << pre.second << std::endl;
+      cout << pre.second << endl;
       INFO << "Inferred Precondition = " << pre.second;
     }
   }
