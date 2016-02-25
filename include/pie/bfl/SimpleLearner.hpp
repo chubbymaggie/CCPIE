@@ -2,7 +2,9 @@
 #define __PIE_BFL_SIMPLELEARNER_HPP__
 
 #include <algorithm>
+#include <unordered_set>
 #include <utility>
+#include <vector>
 
 #include "pie/Log.h"
 #include "pie/Traits.h"
@@ -11,17 +13,14 @@
 namespace pie {
 namespace bfl {
 
-template <template <typename...> class SeqContainer,
-          template <typename...> class UniqueContainer>
-typename SimpleLearner<SeqContainer, UniqueContainer>::LearnerResult
-SimpleLearner<SeqContainer, UniqueContainer>::learnCNF() const {
+typename SimpleLearner::LearnerResult SimpleLearner::learnCNF() const {
   if (this->conflictedTests().size()) return {BAD_FUNCTION, {}};
 
   for (auto max_clause_size = 3; max_clause_size < CLAUSE_SIZE_UPPER_BOUND;
        ++max_clause_size) {
     auto clauses = genAllClauses(max_clause_size, this->feature_count);
 
-    UniqueContainer<BitVector> pos_vectors, neg_vectors;
+    std::unordered_set<BitVector> pos_vectors, neg_vectors;
     for (auto && t : this->test_set) {
       BitVector vec;
       for (auto && clause : clauses) {
@@ -41,19 +40,11 @@ SimpleLearner<SeqContainer, UniqueContainer>::learnCNF() const {
 
     try {
       CNF result;
-      using ClauseT = typename CNF::value_type;
 
       DEBUG << "Learning conjunction on clauses:";
       auto learned_cnf =
           learnConjunctionOnAllClauses(clauses, pos_vectors, neg_vectors);
-
-      if (pie::traits::is_std_vector<SeqContainer<int>>::value) {
-        for (auto & clause : learned_cnf) result.push_back(clauses[clause]);
-      } else {
-        for (auto & clause : learned_cnf)
-          result.push_back(
-              ClauseT(clauses[clause].cbegin(), clauses[clause].cend()));
-      }
+      for (auto & clause : learned_cnf) result.push_back(clauses[clause]);
       DEBUG << "Learned CNF = " << static_cast<const CNF &>(result);
 
       return {PASS, result};
@@ -64,12 +55,11 @@ SimpleLearner<SeqContainer, UniqueContainer>::learnCNF() const {
   return {FAIL, {}};
 }
 
-template <template <typename...> class SeqContainer,
-          template <typename...> class UniqueContainer>
-typename SimpleLearner<SeqContainer, UniqueContainer>::RndAccessCNF
-SimpleLearner<SeqContainer, UniqueContainer>::genAllClauses(
-    LiteralID max_clause_size, FeatureID max_feature_id, bool negated_vars) {
-  RndAccessCNF clauses;
+typename SimpleLearner::CNF
+SimpleLearner::genAllClauses(LiteralID max_clause_size,
+                             FeatureID max_feature_id,
+                             bool negated_vars) const {
+  CNF clauses;
   if (max_clause_size > max_feature_id) max_clause_size = max_feature_id;
 
   for (LiteralID size = 0; size <= max_clause_size; ++size) {
@@ -77,7 +67,7 @@ SimpleLearner<SeqContainer, UniqueContainer>::genAllClauses(
     std::fill(select.begin(), select.end() - max_feature_id + size, true);
 
     do {
-      RndAccessCNF::value_type clause;
+      CNF::value_type clause;
       for (FeatureID i = 0; i < max_feature_id; ++i)
         if (select[i]) clause.push_back(i + 1);
       clauses.push_back(clause);
@@ -87,7 +77,7 @@ SimpleLearner<SeqContainer, UniqueContainer>::genAllClauses(
           BitVector neg(size);
           std::fill(neg.begin(), neg.end() - size + subsize, true);
           do {
-            RndAccessCNF::value_type nclause;
+            CNF::value_type nclause;
             for (LiteralID i = 0; i < size; ++i)
               if (neg[i])
                 nclause.push_back(-clause[i]);
@@ -113,11 +103,9 @@ SimpleLearner<SeqContainer, UniqueContainer>::genAllClauses(
   return clauses;
 }
 
-template <template <typename...> class SeqContainer,
-          template <typename...> class UniqueContainer>
-UniqueContainer<ClauseID>
-SimpleLearner<SeqContainer, UniqueContainer>::pruneClausesWithPositives(
-    UniqueContainer<ClauseID> && conj, const UniqueContainer<BitVector> & pos) {
+std::unordered_set<ClauseID> SimpleLearner::pruneClausesWithPositives(
+    std::unordered_set<ClauseID> && conj,
+    const std::unordered_set<BitVector> & pos) const {
   for (auto && p : pos)
     for (auto ci = conj.begin(); ci != conj.end();)
       if (!p[*ci])
@@ -125,18 +113,16 @@ SimpleLearner<SeqContainer, UniqueContainer>::pruneClausesWithPositives(
       else
         ++ci;
 
-  DEBUG << indent(2)
-        << "C_pos = " << static_cast<const UniqueContainer<ClauseID> &>(conj);
+  DEBUG << indent(2) << "C_pos = "
+        << static_cast<const std::unordered_set<ClauseID> &>(conj);
 
   return conj;
 }
 
-template <template <typename...> class SeqContainer,
-          template <typename...> class UniqueContainer>
-UniqueContainer<ClauseID>
-SimpleLearner<SeqContainer, UniqueContainer>::pruneClausesWithNegatives(
-    UniqueContainer<ClauseID> && conj, UniqueContainer<BitVector> & neg) {
-  UniqueContainer<ClauseID> result;
+std::unordered_set<ClauseID> SimpleLearner::pruneClausesWithNegatives(
+    std::unordered_set<ClauseID> && conj,
+    std::unordered_set<BitVector> & neg) const {
+  std::unordered_set<ClauseID> result;
 
   while (!neg.empty()) {
     std::pair<ClauseID, TestID> max_false{0, 0};
@@ -162,19 +148,17 @@ SimpleLearner<SeqContainer, UniqueContainer>::pruneClausesWithNegatives(
         ++ni;
   }
 
-  DEBUG << indent(2)
-        << "C_neg = " << static_cast<const UniqueContainer<ClauseID> &>(result);
+  DEBUG << indent(2) << "C_neg = "
+        << static_cast<const std::unordered_set<ClauseID> &>(result);
 
   return result;
 }
 
-template <template <typename...> class SeqContainer,
-          template <typename...> class UniqueContainer>
-UniqueContainer<ClauseID> SimpleLearner<SeqContainer, UniqueContainer>::
-    learnStrongConjunctionOnAllClauses(UniqueContainer<ClauseID> && conj,
-                                       const UniqueContainer<BitVector> & pos,
-                                       UniqueContainer<BitVector> & neg) {
-  UniqueContainer<ClauseID> result;
+std::unordered_set<ClauseID> SimpleLearner::learnStrongConjunctionOnAllClauses(
+    std::unordered_set<ClauseID> && conj,
+    const std::unordered_set<BitVector> & pos,
+    std::unordered_set<BitVector> & neg) const {
+  std::unordered_set<ClauseID> result;
 
   while (!neg.empty()) {
     std::pair<ClauseID, TestID> max_false{0, 0};
@@ -215,25 +199,20 @@ UniqueContainer<ClauseID> SimpleLearner<SeqContainer, UniqueContainer>::
   }
 
   DEBUG << indent(2) << "C_strong = "
-        << static_cast<const UniqueContainer<ClauseID> &>(result);
+        << static_cast<const std::unordered_set<ClauseID> &>(result);
 
   return result;
 }
 
-template <template <typename...> class SeqContainer,
-          template <typename...> class UniqueContainer>
-UniqueContainer<ClauseID>
-SimpleLearner<SeqContainer, UniqueContainer>::learnConjunctionOnAllClauses(
-    typename SimpleLearner<SeqContainer, UniqueContainer>::RndAccessCNF &
-        clauses,
-    UniqueContainer<BitVector> & pos,
-    UniqueContainer<BitVector> & neg,
-    bool strengthen) {
-  UniqueContainer<ClauseID> conj(clauses.size());
+std::unordered_set<ClauseID> SimpleLearner::learnConjunctionOnAllClauses(
+    typename SimpleLearner::CNF & clauses,
+    std::unordered_set<BitVector> & pos,
+    std::unordered_set<BitVector> & neg) const {
+  std::unordered_set<ClauseID> conj(clauses.size());
   for (ClauseID i = 0; i < clauses.size(); ++i) conj.insert(i);
 
-  DEBUG << indent(2)
-        << "C_all = " << static_cast<const UniqueContainer<ClauseID> &>(conj);
+  DEBUG << indent(2) << "C_all = "
+        << static_cast<const std::unordered_set<ClauseID> &>(conj);
 
   return (strengthen
               ? learnStrongConjunctionOnAllClauses(std::move(conj), pos, neg)

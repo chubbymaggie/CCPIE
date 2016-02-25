@@ -12,12 +12,6 @@
 namespace pie {
 namespace traits {
 
-template<typename>
-struct is_std_vector : std::false_type {};
-
-template<typename T, typename A>
-struct is_std_vector<std::vector<T,A>> : std::true_type {};
-
 namespace type_categories {
 
 using Simple = std::integral_constant<unsigned, 0>;

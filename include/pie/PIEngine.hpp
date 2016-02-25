@@ -2,6 +2,7 @@
 #define __PIE_PIENGINE_HPP__
 
 #include <numeric>
+#include <tuple>
 #include <utility>
 #include <vector>
 

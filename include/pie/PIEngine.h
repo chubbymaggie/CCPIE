@@ -4,6 +4,7 @@
 #include <functional>
 #include <tuple>
 #include <utility>
+#include <vector>
 
 #include <boost/optional.hpp>
 

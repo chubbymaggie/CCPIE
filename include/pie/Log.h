@@ -6,9 +6,6 @@
 #include <unordered_set>
 #include <vector>
 
-#include <boost/concept/assert.hpp>
-#include <boost/concept_check.hpp>
-
 #include <boost/log/sources/global_logger_storage.hpp>
 #include <boost/log/trivial.hpp>
 
@@ -111,7 +108,8 @@ inline formatting_ostream & operator<<(formatting_ostream & o,
 template <typename... Ts>
 inline formatting_ostream & operator<<(formatting_ostream & o,
                                        const std::tuple<Ts...> & t) {
-  return pie::detail::writeTupleToStream(o, t, std::index_sequence_for<Ts...>{});
+  return pie::detail::writeTupleToStream(
+      o, t, std::index_sequence_for<Ts...>{});
 }
 
 template <typename T>

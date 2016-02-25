@@ -2,15 +2,15 @@
 #define __PIE_BFL_ILEARNER_HPP__
 
 #include <exception>
+#include <vector>
 
 #include <boost/multi_index_container.hpp>
 
 namespace pie {
 namespace bfl {
 
-template <typename Derived, template <typename...> class BackSequence>
-const BitVector & ILearner<Derived, BackSequence>::
-operator[](const TestID & test_id) const {
+template <typename Derived>
+const BitVector & ILearner<Derived>::operator[](const TestID & test_id) const {
   const auto & tv_id_view = boost::multi_index::get<tag::by_id>(test_set);
   const auto & t_it = tv_id_view.find(test_id);
 
@@ -20,9 +20,8 @@ operator[](const TestID & test_id) const {
     return t_it->features;
 }
 
-template <typename Derived, template <typename...> class BackSequence>
-TestInfo ILearner<Derived, BackSequence>::
-operator()(const TestID & test_id) const {
+template <typename Derived>
+TestInfo ILearner<Derived>::operator()(const TestID & test_id) const {
   const auto & tv_id_view = boost::multi_index::get<tag::by_id>(test_set);
   const auto & t_it = tv_id_view.find(test_id);
 
@@ -32,25 +31,23 @@ operator()(const TestID & test_id) const {
     return *t_it;
 }
 
-template <typename Derived, template <typename...> class BackSequence>
-Derived & ILearner<Derived, BackSequence>::operator+=(TestInfo && new_test) {
+template <typename Derived>
+Derived & ILearner<Derived>::operator+=(TestInfo && new_test) {
   if (new_test.id == 0) new_test.id = test_set.size();
   test_set.insert(std::move(new_test));
   return static_cast<Derived &>(*this);
 }
 
-template <typename Derived, template <typename...> class BackSequence>
-Derived &
-ILearner<Derived, BackSequence>::add_new_test(const BitVector & features,
-                                              const bool result) {
+template <typename Derived>
+Derived & ILearner<Derived>::add_new_test(const BitVector & features,
+                                          const bool result) {
   test_set.emplace(features, test_set.size(), result);
   return static_cast<Derived &>(*this);
 }
 
-template <typename Derived, template <typename...> class BackSequence>
-BackSequence<BackSequence<TestID>>
-ILearner<Derived, BackSequence>::conflictedTests() const {
-  BackSequence<BackSequence<TestID>> conflicted_groups;
+template <typename Derived>
+std::vector<std::vector<TestID>> ILearner<Derived>::conflictedTests() const {
+  std::vector<std::vector<TestID>> conflicted_groups;
 
   const auto & fv_view = boost::multi_index::get<tag::by_fvector>(test_set);
   for (auto fv_it = fv_view.begin(); fv_it != fv_view.end();) {
@@ -67,7 +64,7 @@ ILearner<Derived, BackSequence>::conflictedTests() const {
     fv_it = bounds.second;
 
     if (conflict) {
-      BackSequence<TestID> group;
+      std::vector<TestID> group;
       for (auto & it = bounds.first; it != bounds.second; ++it)
         group.push_back(it->id);
       conflicted_groups.push_back(group);

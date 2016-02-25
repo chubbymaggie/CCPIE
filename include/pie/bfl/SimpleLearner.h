@@ -5,8 +5,6 @@
 #include <unordered_set>
 #include <vector>
 
-#include <boost/concept/assert.hpp>
-
 #include "pie/config.h"
 
 #include "pie/Log.h"
@@ -16,38 +14,20 @@
 namespace pie {
 namespace bfl {
 
-template <template <typename...> class BackSequence = std::vector,
-          template <typename...> class UniqueContainer = std::unordered_set>
-class SimpleLearner
-    : public ILearner<SimpleLearner<BackSequence, UniqueContainer>,
-                      BackSequence> {
-  BOOST_CONCEPT_ASSERT((boost::BackInsertionSequence<BackSequence<int>>));
-  BOOST_CONCEPT_ASSERT((boost::Container<UniqueContainer<int>>));
-
-  /* TODO: Should actually check
-  BOOST_CONCEPT_ASSERT(
-      (boost::UnorderedAssociativeContainer<UniqueContainer<int>>));
-  */
-
+class SimpleLearner : public ILearner<SimpleLearner> {
 public:
-  using __base =
-      ILearner<SimpleLearner<BackSequence, UniqueContainer>, BackSequence>;
-  using LearnerResult = typename __base::LearnerResult;
+  using __base = ILearner<SimpleLearner>;
 
   using CNF = typename __base::CNF;
-  using RndAccessCNF = std::vector<std::vector<FeatureID>>;
+  using LearnerResult = typename __base::LearnerResult;
 
   class bad_function_error : public std::logic_error {
   public:
     bad_function_error() : logic_error("Impossible boolean function!") {}
   };
 
-  using ILearner<SimpleLearner<BackSequence, UniqueContainer>,
-                 BackSequence>::ILearner;
-
-  SimpleLearner(const FeatureID & nfeature)
-      : ILearner<SimpleLearner<BackSequence, UniqueContainer>, BackSequence>(
-            nfeature) {
+  SimpleLearner(const FeatureID & nfeature, bool s = false)
+      : ILearner<SimpleLearner>(nfeature), strengthen(s) {
     INFO << "SimpleLearner instantiated with "
          << static_cast<int_fast64_t>(nfeature) << " F";
     DEBUG << indent(2) << "Offset for feature-ids = "
@@ -58,28 +38,31 @@ public:
 
   FeatureID featureIndexOffset() const { return 1; }
 
-  static RndAccessCNF genAllClauses(LiteralID max_clause_size,
-                                    FeatureID max_feature_id,
-                                    bool negated_vars = true);
+protected:
+  CNF genAllClauses(LiteralID max_clause_size,
+                    FeatureID max_feature_id,
+                    bool negated_vars = true) const;
 
-  static UniqueContainer<ClauseID>
-  pruneClausesWithPositives(UniqueContainer<ClauseID> && conj,
-                            const UniqueContainer<BitVector> & pos);
+  std::unordered_set<ClauseID>
+  pruneClausesWithPositives(std::unordered_set<ClauseID> && conj,
+                            const std::unordered_set<BitVector> & pos) const;
 
-  static UniqueContainer<ClauseID>
-  pruneClausesWithNegatives(UniqueContainer<ClauseID> && conj,
-                            UniqueContainer<BitVector> & neg);
+  std::unordered_set<ClauseID>
+  pruneClausesWithNegatives(std::unordered_set<ClauseID> && conj,
+                            std::unordered_set<BitVector> & neg) const;
 
-  static UniqueContainer<ClauseID>
-  learnStrongConjunctionOnAllClauses(UniqueContainer<ClauseID> && conj,
-                                     const UniqueContainer<BitVector> & pos,
-                                     UniqueContainer<BitVector> & neg);
+  std::unordered_set<ClauseID>
+  learnStrongConjunctionOnAllClauses(std::unordered_set<ClauseID> && conj,
+                                     const std::unordered_set<BitVector> & pos,
+                                     std::unordered_set<BitVector> & neg) const;
 
-  static UniqueContainer<ClauseID>
-  learnConjunctionOnAllClauses(RndAccessCNF & clauses,
-                               UniqueContainer<BitVector> & pos,
-                               UniqueContainer<BitVector> & neg,
-                               bool strengthen = false);
+  std::unordered_set<ClauseID>
+  learnConjunctionOnAllClauses(CNF & clauses,
+                               std::unordered_set<BitVector> & pos,
+                               std::unordered_set<BitVector> & neg) const;
+
+private:
+  bool strengthen;
 };
 
 } // namespace bfl

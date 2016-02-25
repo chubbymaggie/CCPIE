@@ -12,7 +12,7 @@ int main() {
   using namespace pie;
 
   using Formatter = formats::Human<>;
-  using Learner = bfl::SimpleLearner<>;
+  using Learner = bfl::SimpleLearner;
 
   random_device rd;
   default_random_engine rand_gen(rd());
@@ -30,7 +30,7 @@ int main() {
          },
          "identity"},
 
-        gen::testSequence<vector, tuple<int>>(1024, udist, rand_gen),
+        gen::testVector<tuple<int>>(1024, udist, rand_gen),
 
         gen::Features<Formatter, int>({"i"})[true]);
 

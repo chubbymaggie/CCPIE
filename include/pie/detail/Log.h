@@ -3,6 +3,9 @@
 
 #include <utility>
 
+#include <boost/concept/assert.hpp>
+#include <boost/concept_check.hpp>
+
 namespace pie {
 namespace detail {
 
