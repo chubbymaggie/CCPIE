@@ -28,16 +28,16 @@ PIEngine<ResT, Formatter, ArgT...>::inferCNF() const {
 
   INFO << "Invoking boolean function learner ...";
   for (const auto & t : tests) {
-    learner += {std::accumulate(features.begin(),
-                                features.end(),
-                                BitVector(),
-                                [&t](BitVector & bv, const FeatureT & f) {
-                                  auto b = f.first(t);
-                                  bv.push_back(b && *b);
-                                  return bv;
-                                }),
-                0,
-                post.first(t, func(t))};
+    learner.add_new_test(
+        std::accumulate(features.begin(),
+                        features.end(),
+                        BitVector(),
+                        [&t](BitVector & bv, const FeatureT & f) {
+                          auto b = f.first(t);
+                          bv.push_back(b && *b);
+                          return bv;
+                        }),
+        post.first(t, func(t)));
   }
   auto result = learner.learnCNF();
   Formatter formatter;

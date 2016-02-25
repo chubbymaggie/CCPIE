@@ -45,7 +45,7 @@ public:
   using ILearner<SimpleLearner<BackSequence, UniqueContainer>,
                  BackSequence>::ILearner;
 
-  SimpleLearner(FeatureID nfeature)
+  SimpleLearner(const FeatureID & nfeature)
       : ILearner<SimpleLearner<BackSequence, UniqueContainer>, BackSequence>(
             nfeature) {
     INFO << "SimpleLearner instantiated with "

@@ -14,7 +14,7 @@ template <typename RandGen,
           typename A,
           typename B,
           template <typename...> class T>
-class Tests<RandGen, Dist, T<A, B>, pie::traits::type_categories::Inserter>
+class Tests<RandGen, Dist, T<A, B>, pie::traits::type_categories::PairInserter>
     : public detail::TestsBase<RandGen, Dist, T<A, B>> {
 public:
   using detail::TestsBase<RandGen, Dist, T<A, B>>::TestsBase;
@@ -33,7 +33,7 @@ template <typename RandGen,
           typename Dist,
           typename A,
           template <typename...> class T>
-class Tests<RandGen, Dist, T<A>, pie::traits::type_categories::PairInserter>
+class Tests<RandGen, Dist, T<A>, pie::traits::type_categories::Inserter>
     : public detail::TestsBase<RandGen, Dist, T<A>> {
 public:
   using detail::TestsBase<RandGen, Dist, T<A>>::TestsBase;

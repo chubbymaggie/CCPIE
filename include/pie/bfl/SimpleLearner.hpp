@@ -4,9 +4,9 @@
 #include <algorithm>
 #include <utility>
 
-#include "pie/config.h"
-
 #include "pie/Log.h"
+#include "pie/Traits.h"
+#include "pie/config.h"
 
 namespace pie {
 namespace bfl {
@@ -47,10 +47,12 @@ SimpleLearner<SeqContainer, UniqueContainer>::learnCNF() const {
       auto learned_cnf =
           learnConjunctionOnAllClauses(clauses, pos_vectors, neg_vectors);
 
-      for (auto & clause : learned_cnf) {
-        // TODO: Conditionally avoid copy if SeqContainer is std::vector
-        result.push_back(
-            ClauseT(clauses[clause].cbegin(), clauses[clause].cend()));
+      if (pie::traits::is_std_vector<SeqContainer<int>>::value) {
+        for (auto & clause : learned_cnf) result.push_back(clauses[clause]);
+      } else {
+        for (auto & clause : learned_cnf)
+          result.push_back(
+              ClauseT(clauses[clause].cbegin(), clauses[clause].cend()));
       }
       DEBUG << "Learned CNF = " << static_cast<const CNF &>(result);
 

@@ -20,6 +20,9 @@ struct TestInfo {
   BitVector features;
   TestID id;
   bool result;
+
+  TestInfo(const BitVector & f, const TestID & t, const bool res)
+      : features(f), id(t), result(res) {}
 };
 
 namespace tag {
@@ -41,16 +44,15 @@ public:
   using CNF = BackSequence<BackSequence<FeatureID>>;
   using LearnerResult = std::pair<LearnerStatus, CNF>;
 
-  virtual ~ILearner(){};
-  ILearner(FeatureID nfeature) : feature_count(nfeature) {}
+  virtual ~ILearner() {}
+  ILearner(const FeatureID & nfeature) : feature_count(nfeature) {}
 
   virtual const BitVector & operator[](const TestID &) const;
 
   virtual TestInfo operator()(const TestID &) const;
 
   virtual Derived & operator+=(TestInfo &&);
-
-  virtual Derived & operator<<=(BackSequence<TestInfo> &&);
+  virtual Derived & add_new_test(const BitVector &, const bool);
 
   virtual BackSequence<ConflictGroup> conflictedTests() const;
 

@@ -40,12 +40,10 @@ Derived & ILearner<Derived, BackSequence>::operator+=(TestInfo && new_test) {
 }
 
 template <typename Derived, template <typename...> class BackSequence>
-Derived & ILearner<Derived, BackSequence>::
-operator<<=(BackSequence<TestInfo> && new_tests) {
-  while (!new_tests.empty()) {
-    (*this) += std::move(new_tests.back());
-    new_tests.pop_back();
-  }
+Derived &
+ILearner<Derived, BackSequence>::add_new_test(const BitVector & features,
+                                              const bool result) {
+  test_set.emplace(features, test_set.size(), result);
   return static_cast<Derived &>(*this);
 }
 
