@@ -23,21 +23,22 @@ namespace pie {
 
 template <typename ResT, typename Formatter, typename... ArgT>
 template <typename Learner>
-std::pair<bfl::LearnerStatus, typename Formatter::FormatT>
+std::pair<bfl::LearnerStatus, typename Formatter::T>
 PIEngine<ResT, Formatter, ArgT...>::inferCNF() const {
   Learner learner(features.size());
 
   INFO << "Invoking boolean function learner ...";
   for (const auto & t : tests) {
     learner.add_new_test(
-        std::accumulate(features.begin(),
-                        features.end(),
-                        BitVector(),
-                        [&t](BitVector & bv, const FeatureT & f) {
-                          auto b = f.first(t);
-                          bv.push_back(b && *b);
-                          return bv;
-                        }),
+        std::accumulate(
+            features.begin(),
+            features.end(),
+            BitVector(),
+            [&t](BitVector & bv, const FeatureType<Formatter, ArgT...> & f) {
+              auto b = f.first(t);
+              bv.push_back(b && *b);
+              return bv;
+            }),
         post.first(t, func(t)));
   }
   auto result = learner.learnCNF();
@@ -82,8 +83,16 @@ PIEngine<ResT, Formatter, ArgT...>::add_test(const std::tuple<ArgT...> & t) {
 template <typename ResT, typename Formatter, typename... ArgT>
 PIEngine<ResT, Formatter, ArgT...> &
 PIEngine<ResT, Formatter, ArgT...>::add_feature(
-    const std::pair<std::function<bool(const ArgT &...)>,
-                    typename Formatter::FormatT> & feature) {
+    const FeatureType<Formatter, ArgT...> & feature) {
+  INFO << "Added new feature: " << feature.second;
+  features.push_back(feature);
+  return *this;
+}
+
+template <typename ResT, typename Formatter, typename... ArgT>
+PIEngine<ResT, Formatter, ArgT...> &
+PIEngine<ResT, Formatter, ArgT...>::add_feature(
+    const RawFeatureType<Formatter, ArgT...> & feature) {
   INFO << "Added new feature: " << feature.second;
 
   /* clang-format off */
@@ -104,12 +113,9 @@ PIEngine<ResT, Formatter, ArgT...>::add_feature(
 template <typename ResT, typename Formatter, typename... ArgT>
 PIEngine<ResT, Formatter, ArgT...>::PIEngine(
     const std::function<ResT(const ArgT &...)> & f,
-    const std::pair<
-        std::function<bool(const boost::optional<ResT> &, const ArgT &...)>,
-        FormatT> & p,
-    const std::vector<std::tuple<ArgT...>> & ts,
-    const std::vector<
-        std::pair<std::function<bool(const ArgT &...)>, FormatT>> & fs)
+    const RawPostConditionType<ResT, Formatter, ArgT...> & p,
+    const TupledVector<ArgT...> & ts,
+    const RawFeatureVectorType<Formatter, ArgT...> & fs)
 
     : /* clang-format off */
       func([f](const std::tuple<ArgT...> & t) -> boost::optional<ResT> {
@@ -121,7 +127,7 @@ PIEngine<ResT, Formatter, ArgT...>::PIEngine(
         -> bool {
           auto b = detail::callExceptionSafe(
               f,
-              std::tuple_cat(std::make_tuple(r), i));
+              std::tuple_cat(i, std::make_tuple(r)));
           return *b && b; },
         p.second}),
       /* clang-format on */

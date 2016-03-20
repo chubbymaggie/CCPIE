@@ -25,7 +25,7 @@ int main() {
 
         [](const int & i) { return i > 0 ? i : -i; },
 
-        {[](const boost::optional<int> & result, const int & input) {
+        {[](const int & input, const boost::optional<int> & result) {
            return result && input == *result;
          },
          "identity"},

@@ -10,7 +10,9 @@ namespace detail {
 template <typename RandGen, typename Dist, typename T>
 class TestsBase {
 public:
+  virtual ~TestsBase() = default;
   TestsBase(RandGen & r) : rnd_gen(r) {}
+
   virtual T operator[](Dist &) = 0;
 
 protected:

@@ -25,7 +25,7 @@ template <typename Format,
           template <typename...> class PushBackContainer = std::vector>
 class IFormatter {
 public:
-  using FormatT = Format;
+  using T = Format;
   using FormatCNF = PushBackContainer<PushBackContainer<Format>>;
 
   /* TODO: A more generic solution? Multi-methods? */

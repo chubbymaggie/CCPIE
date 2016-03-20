@@ -38,7 +38,7 @@ public:
   using CNF = std::vector<std::vector<FeatureID>>;
   using LearnerResult = std::pair<LearnerStatus, CNF>;
 
-  virtual ~ILearner() {}
+  virtual ~ILearner() = default;
   ILearner(const FeatureID & nfeature) : feature_count(nfeature) {}
 
   virtual const BitVector & operator[](const TestID &) const;
